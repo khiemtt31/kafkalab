@@ -1,0 +1,28 @@
+# Dependencies and generated application output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local deployment links, secrets, and machine files
+.vercel/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store
+*.log
+
+# Local browser evidence and archives are not source artifacts
+.agents/review/artifacts/
+archives/
+*.zip
+.vercel
+.env*
