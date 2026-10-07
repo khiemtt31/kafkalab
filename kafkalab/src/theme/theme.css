@@ -1,0 +1,192 @@
+/* Shared tokens keep the graph, detail pages, and native controls in one theme. */
+:root {
+  color-scheme: light;
+  --kl-surface: #fff;
+  --kl-surface-soft: #f7f7f4;
+  --kl-accent-ink: #b93429;
+  --kl-flow-text: #171717;
+  --kl-flow-border: #b7b7b1;
+  --kl-flow-muted: #74746c;
+  --kl-flow-bg: #fbfbf8;
+  --kl-flow-card: #fff;
+  --kl-flow-icon-bg: #292929;
+  --kl-flow-icon-ink: #fff;
+  --kl-flow-active-icon-ink: #fff;
+  --kl-flow-edge: #999993;
+  --kl-flow-grid: #c8c8c2;
+  --kl-flow-accent: #df3030;
+  --kl-flow-attention-bg: #d9d9d4;
+  --kl-flow-attention-ink: #222;
+  --kl-flow-mask: rgba(247, 247, 243, .72);
+  --kl-flow-hint-bg: #fbfbf8ee;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --kl-bg: #19191c;
+  --kl-paper: #242428;
+  --kl-surface: #242428;
+  --kl-surface-soft: #2d2d32;
+  --kl-ink: #f0f0f2;
+  --kl-muted: #b1b1bb;
+  --kl-line: #44444c;
+  --kl-red-soft: #3b2528;
+  --kl-accent-ink: #f28c81;
+  --kl-flow-text: #efeff2;
+  --kl-flow-border: #65656f;
+  --kl-flow-muted: #b6b6bf;
+  --kl-flow-bg: #1d1d21;
+  --kl-flow-card: #2a2a30;
+  --kl-flow-icon-bg: #3b3b44;
+  --kl-flow-icon-ink: #fff;
+  --kl-flow-active-icon-ink: #19191c;
+  --kl-flow-edge: #aaaab5;
+  --kl-flow-grid: #45454e;
+  --kl-flow-accent: #f0746b;
+  --kl-flow-attention-bg: #4b4b55;
+  --kl-flow-attention-ink: #ebebef;
+  --kl-flow-mask: rgba(29, 29, 33, .72);
+  --kl-flow-hint-bg: #2a2a30ee;
+  --bg: var(--kl-bg);
+  --panel: var(--kl-surface);
+  --panel-strong: var(--kl-surface-soft);
+  --border: var(--kl-line);
+  --text: var(--kl-ink);
+  --muted: var(--kl-muted);
+  --accent: var(--kl-accent-ink);
+  --danger: var(--kl-accent-ink);
+  --lab-bg: var(--kl-bg);
+  --lab-surface: var(--kl-surface);
+  --lab-raised: var(--kl-surface);
+  --lab-raised-2: var(--kl-surface-soft);
+  --lab-line: var(--kl-line);
+  --lab-line-subtle: #3c3c44;
+  --lab-text: var(--kl-ink);
+  --lab-muted: var(--kl-muted);
+  --lab-cyan: var(--kl-accent-ink);
+  --lab-lime: #e1e1e7;
+  --lab-amber: #c9c9d2;
+  --lab-red: var(--kl-accent-ink);
+  --lab-purple: #d0d0da;
+  --lab-shadow: 0 12px 30px rgb(0 0 0 / 18%);
+}
+
+.kl-header .kl-theme-toggle {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  width: 44px;
+  height: 44px;
+  color: var(--kl-ink);
+  background: var(--kl-surface-soft);
+  border-color: var(--kl-line);
+  border-radius: 10px;
+}
+.kl-header .kl-theme-toggle:hover { color: var(--kl-accent-ink); border-color: var(--kl-accent-ink); }
+.kl-header .kl-theme-toggle svg { width: 20px; height: 20px; }
+.kl-section-heading h2:focus-visible,
+.inspector-content__title h3:focus-visible { outline: 2px solid var(--kl-red); outline-offset: 4px; border-radius: 3px; }
+
+:root[data-theme="dark"] :is(
+  .kl-header, .kl-workspace-bar, .kl-chart-tabs, .kl-execution-strip, .kl-card,
+  .kl-practice-category, .kl-quiz-card, .kl-guide-journey, .kl-guide-exercise,
+  .kl-guide-disclosure, .kl-guide-step-arrow, .kl-quiz-dots button, .kl-section-icon
+) { background: var(--kl-surface); border-color: var(--kl-line); }
+
+:root[data-theme="dark"] :is(
+  .kl-main-nav, .kl-workspace-symbol, .kl-guide-step-icon, .kl-guide-result,
+  .kl-notice, .kl-quiz-option__key, .kl-experiment-evidence thead,
+  .kl-experiment-records li, .kl-practice-progress, .kl-quiz-progress,
+  .kl-existing-panels .consumer-card, .kl-existing-panels .advanced-card,
+  .kl-existing-panels .advanced-intro
+) { background: var(--kl-surface-soft); border-color: var(--kl-line); }
+
+:root[data-theme="dark"] .kl-canvas-stage { background: var(--kl-bg); }
+:root[data-theme="dark"] .kl-canvas-stage .kl-flow-canvas { background: var(--kl-flow-bg); border-color: var(--kl-line); }
+:root[data-theme="dark"] :is(.kl-main-nav a, .kl-settings-sidebar nav > button, .kl-icon-button, .kl-chart-tabs button):hover { color: var(--kl-ink); background: var(--kl-surface-soft); }
+:root[data-theme="dark"] :is(.kl-main-nav a[aria-current="page"], .kl-settings-sidebar nav > button[aria-pressed="true"]) { color: var(--kl-ink); background: var(--kl-surface); border-color: var(--kl-line); }
+:root[data-theme="dark"] .kl-chart-tabs button { color: var(--kl-muted); }
+:root[data-theme="dark"] .kl-chart-tabs button[aria-selected="true"] { color: var(--kl-ink); background: var(--kl-red-soft); border-bottom-color: var(--kl-red); }
+
+:root[data-theme="dark"] :is(
+  .kl-main-nav a, .kl-icon-button, .kl-settings-sidebar nav > button, .kl-chart-tabs button,
+  .kl-settings-help, .kl-settings-sidebar small, .kl-workspace-symbol,
+  .kl-workspace-title p, .kl-workspace-title h1 > span, .kl-topology-context,
+  .kl-topology-context > span, .kl-execution-state small, .kl-execution-metrics,
+  .kl-activity-link, .kl-app-loading, .kl-page-heading > div > p:last-child,
+  .kl-section-icon, .kl-section-heading p, .kl-section-intro, .kl-card-heading p,
+  .kl-form label small, .kl-form output, .kl-optional, .kl-number-row span,
+  .kl-reset-note, .kl-notice, .kl-workflow-summary .kl-overline,
+  .kl-workflow-summary > div svg, .kl-workflow-summary > div span, .kl-scenario p,
+  .kl-practice-heading p:last-child, .kl-practice-category__top > span,
+  .kl-practice-category p, .kl-practice-back, .kl-quiz-progress-row,
+  .kl-quiz-option__key, .kl-quiz-option__state, .kl-quiz-prompt, .kl-quiz-footer,
+  .kl-guide-hero h1 span, .kl-guide-hero p, .kl-guide-step-icon,
+  .kl-guide-step-number, .kl-guide-journey p, .kl-guide-step-arrow,
+  .kl-guide-exercise > div:first-child > p, .kl-guide-exercise li small,
+  .kl-guide-result, .kl-guide-notes article > svg, .kl-guide-notes p,
+  .kl-experiment-progress, .kl-experiment > summary small,
+  .kl-experiment-run > p, .kl-experiment-commit > p, .kl-experiment-evidence caption,
+  .kl-experiment-scroll-hint, .kl-experiment-records small, .kl-experiment-explain p,
+  .kl-experiment-boundary p, .kl-experiment-notice, .kl-experiment-scope,
+  .kl-guide-learning-heading p, .kl-guide-disclosure-body > p,
+  .kl-guide-disclosure-items p, .kl-guide-next p, .kl-guide-footnote,
+  .kl-scenario-instructions
+) { color: var(--kl-muted); }
+
+:root[data-theme="dark"] :is(
+  .kl-execution-metrics b, .kl-text-button, .kl-quiz-option, .kl-quiz-dots button,
+  .kl-guide-disclosure > summary, .kl-guide-disclosure-items h3
+) { color: var(--kl-ink); }
+
+:root[data-theme="dark"] :is(
+  .kl-overline, .kl-brand-dot, .kl-main-nav a[aria-current="page"] svg,
+  .kl-workflow-summary > a, .kl-scenario-number, .kl-text-button:hover,
+  .kl-practice-category__link, .kl-guide-term, .kl-guide-result > a,
+  .kl-quiz-footer .kl-text-button, .kl-experiment-prediction legend > span,
+  .kl-experiment-boundary a, .kl-experiment-links a, .kl-scenario-instructions dt,
+  .kl-guide-disclosure > summary:hover, .kl-execution-metrics .kl-record-failure-count,
+  .kl-execution-metrics .kl-record-failure-count b, .kl-guide-step-icon.is-red
+) { color: var(--kl-accent-ink); }
+
+:root[data-theme="dark"] :is(
+  .kl-settings-help, .kl-workflow-summary > div, .kl-text-button,
+  .kl-existing-panels .lab-panel, .kl-quiz-option, .kl-quiz-controls,
+  .kl-guide-journey article, .kl-guide-exercise li, .kl-experiment-prediction label,
+  .kl-experiment-result, .kl-experiment-evidence th, .kl-experiment-evidence td,
+  .kl-guide-disclosure-body, .kl-guide-next
+) { border-color: var(--kl-line); }
+:root[data-theme="dark"] .kl-divider { background: var(--kl-line); }
+:root[data-theme="dark"] .kl-guide-disclosure > summary::after { border-color: var(--kl-muted); }
+:root[data-theme="dark"] .kl-guide-disclosure-items article { border-color: var(--kl-red-soft); }
+
+:root[data-theme="dark"] :is(.kl-form input:not([type="range"]), .kl-form textarea, .kl-form select) { background: var(--kl-bg); border-color: var(--kl-line); color: var(--kl-ink); }
+:root[data-theme="dark"] :is(.kl-form input, .kl-form textarea):hover { border-color: var(--kl-muted); }
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: #9696a2; }
+
+:root[data-theme="dark"] .kl-button--white { color: var(--kl-ink); background: var(--kl-surface); border-color: var(--kl-line); }
+:root[data-theme="dark"] .kl-button--white:hover:not(:disabled) { background: var(--kl-surface-soft); }
+:root[data-theme="dark"] .kl-button--dark { background: #38383f; border-color: #56565e; }
+:root[data-theme="dark"] .kl-button--dark:hover:not(:disabled) { background: #46464e; }
+:root[data-theme="dark"] .kl-skip { background: var(--kl-red); color: #fff; }
+:root[data-theme="dark"] .lab-button--primary { background: var(--kl-red); }
+
+:root[data-theme="dark"] :is(
+  .kl-quiz-topic span, .kl-guide-step-icon.is-red,
+  .kl-experiment-prediction label:has(input:checked),
+  .kl-experiment-feedback, .kl-quiz-option.is-incorrect,
+  .kl-quiz-feedback, .kl-existing-panels .lab-button--danger, .kl-storage-notice
+) { background: var(--kl-red-soft); border-color: #94514c; color: #f4b4ac; }
+:root[data-theme="dark"] .kl-quiz-option:hover { background: var(--kl-surface-soft); border-color: var(--kl-muted); }
+:root[data-theme="dark"] .kl-quiz-option.is-correct,
+:root[data-theme="dark"] .kl-quiz-feedback.is-correct { background: #303638; border-color: #929e99; color: var(--kl-ink); }
+:root[data-theme="dark"] .kl-quiz-dots button[aria-current="step"] { background: var(--kl-red); border-color: var(--kl-red); color: #fff; }
+:root[data-theme="dark"] .kl-storage-notice button { color: #ffc5bd; }
+
+@media (max-width: 800px) {
+  .kl-header { height: 104px; grid-template-columns: 1fr auto; grid-template-rows: 45px 49px; padding: 5px 16px; gap: 0; }
+  .kl-main-nav { grid-row: 2; grid-column: 1 / -1; justify-self: center; }
+  .kl-header .kl-theme-toggle { grid-column: 2; grid-row: 1; }
+  .kl-workspace { height: calc(100dvh - 104px); }
+}
