@@ -6,7 +6,7 @@ Explore seven live chart views, consumer groups and checkpoints, delivery failur
 
 ## Run locally
 
-Use Node.js 22.12 or newer within the Node.js 22 release line. The application is in the **`kafkalab/` subdirectory**, not the repository root.
+Use Node.js 22.22.2 or newer within the Node.js 22 release line, as required by the locked test dependencies. The application is in the **`kafkalab/` subdirectory**, not the repository root.
 
 ```bash
 cd kafkalab
