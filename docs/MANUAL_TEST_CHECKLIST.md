@@ -1,0 +1,165 @@
+# Manual Browser Test Checklist
+
+Current slice: the focused seven-tab chart workspace. Follow section 16 first, then the Guide, Practice, footer, persistence, and reduced-motion regressions that still apply. Older Customize/StepInspector checks are superseded because `/customize` and the inspector surfaces were removed. Automated checks for this slice have run; browser layout and interaction acceptance remains manual.
+
+Use this after automated checks and a fresh review pass. Record `PASS` or `FAIL`, browser, viewport, and reproduction steps beside each item. Keep failed items unchecked. The current evidence and repair map are in [.agents/review/UI_REDESIGN_HANDOFF.md](../.agents/review/UI_REDESIGN_HANDOFF.md).
+
+## 1. Open the app
+
+- [ ] In the project folder, run `npm install` if needed, then `npm run dev`. Open `http://localhost:3000` without environment variables, a broker, or a backend.
+- [ ] A fresh `/` immediately shows connected producer, topic, partition, worker, and commit steps plus a paused reference workload. The selected group is identified in labels or details. Labels are readable; there is no introduction card, form, advanced panel, detailed event table, or metrics dashboard.
+- [ ] The first view identifies three real producers (`checkout-api`, `payment-service`, `shipping-service`), four partitions, four consumers, eight order keys, 24 records, three educational brokers, replication factor 3, min ISR 2, and `acks=all` without implying that a real broker is connected.
+- [ ] The warm white background, dark text, gray structure, and red accents feel readable at normal zoom.
+- [ ] Open **Customize** and find **Workflow**, **Messages**, **Workers**, **Examples**, **Advanced**, and **Activity**. Open **Guide** and find the send/store/read/save explanation.
+
+## 2. Complete the first lesson
+
+- [ ] On **Guide**, read the reset notice, then press **Send example**. Exactly one `order-7F3K9` record is stored. Its partition and offset `0` are shown.
+- [ ] Press **Read record**. The button changes to **Record read**, no new messages are produced, and the workflow pauses after reading. Progress remains unsaved.
+- [ ] Press **Save progress**. The button changes to **Progress saved** and the success sentence appears. Open **Flow**: the execution strip shows one stored record, checkpoint sum 1, zero unread, and commit lag 0.
+- [ ] Return to **Guide** and press **Start fresh**. Repeat the lesson; it starts with one new sample rather than retaining the previous log.
+
+## 3. Run and inspect the flow
+
+- [ ] On **Flow**, press **Reset workflow**. The empty three-partition Guide workflow returns. Use the explicit **Load reference flow** action to restore the paused four-partition reference workload, then press **Run flow** and observe packets and aggregate counters driven by messages; press **Pause flow** and wait about two seconds. Packets stop while records remain.
+- [ ] While paused, press **Send order**. A fresh unique order key is appended and a short activity pulse appears; the flow stays paused and the pulse expires. The Guide's separate **Send example** action remains the only first-lesson action that uses `order-7F3K9`.
+- [ ] Select a node and a connection. Each opens a useful explanation of the state, reason, Kafka concept, source file, and simulation simplification. Use **Close inspector** and `Escape` to dismiss it.
+- [ ] Drag a node, pan the canvas, zoom in/out, use fit view, and use the minimap. Dragging changes layout only; records and offsets stay the same. Reset restores the default layout and viewport.
+- [ ] While paused, send one record and watch its individual token travel from Producer to Topic to the actual allocated Partition. Confirm the token's route matches the partition shown in Activity and the record inspector.
+- [ ] Start reading for the selected group and confirm the same record travels from that partition to its assigned consumer. Commit the record and confirm a token travels from that consumer to Commit only after the committed offset advances.
+- [ ] Produce a batch larger than the visible token limit. Confirm the graph remains bounded, each visible token still identifies a real record, and the timeline/chart retains the complete bounded event history without creating message nodes.
+- [ ] Enable reduced motion and repeat the record flow. Confirm no token moves and no `animateMotion` remains, while active edge/node text still identifies the record phase and destination.
+
+## 4. Change topology and send your own data
+
+- [ ] Open **Customize → Workflow**, enter topic `my-orders` with four partitions, and press **Apply & reset**. The summary and Flow update; old records, progress, and runtime settings reset. Repeat at one and eight partitions and confirm the input stays within these limits.
+- [ ] In **Messages**, send key `user-42` with two different values using automatic partition selection. In **Activity**, both records use the same partition, with increasing offsets. Change the key and inspect the result; a different key may still hash to the same partition.
+- [ ] Clear the key and send several records. Automatic unkeyed routing follows the documented round-robin strategy. Offsets begin at zero independently in each partition.
+- [ ] Choose an explicit partition in **Send to** and press **Send record**. **Activity** shows the requested key, value, partition, and offset. Send a batch of five and confirm five records are appended when the cluster accepts production.
+- [ ] Select the highest partition in **Send to**, reduce the topology to one partition with **Apply & reset**, then return to **Messages** and send. The selection is valid for the new topology and the app does not crash.
+- [ ] Change automatic send rate and simulation speed; press **Run on canvas**. The pace changes. Pause and navigate among Flow, Customize, Guide, and Practice: state is preserved. Refresh the browser: simulator/chart state restores with playback paused.
+
+## 5. Workers, groups, and lag
+
+- [ ] In **Workers**, turn off **Auto-commit simulation**. Send records in **Messages**, then choose **Read existing records only**. Pause on Flow and inspect **Activity**: current positions advance, saved positions stay unchanged, and records still await commit. **Save reading progress** advances saved positions and reduces lag.
+- [ ] Use a worker's **Pause**, **Resume**, and speed slider, including zero. A paused or zero-speed worker does not read new records. Increase production above the reading rate to grow lag, then reduce production so commits can catch up. Lag is `end position - saved position`, including records read but not yet saved.
+- [ ] Press **Add consumer** until workers outnumber partitions. Each partition has at most one active owner within the group; extra workers are visibly idle. Remove a worker and confirm deterministic reassignment. **Activity** shows join/leave, revoke, assignment, and completion events.
+- [ ] Open **Examples → Multiple groups → Open example**. In **Workers**, use **View group** to compare groups. Saving or consuming for one group does not move the other group's committed positions.
+
+## 6. Examples and delivery semantics
+
+- [ ] Open each example in **Customize → Examples**. Each replaces the current workflow and opens Flow with an observable result: Order lifecycle, Producer → partition, Message keys, Slow consumer, Consumer scaling, Rebalance, Duplicate processing, Commit too soon, and Multiple groups. Expand **How to try it** to read Goal, Action, Look for, and Why.
+- [ ] In **Order lifecycle**, confirm `order-created`, `payment-authorized`, `inventory-reserved`, and `order-shipped` use key `order-7F3K9`, share one partition, and receive increasing offsets. Explain how another key can progress on a different partition without a global topic order.
+- [ ] **Duplicate processing** shows a duplicate-delivery event in **Activity** for a record processed before the crash and read again after restart. Explain the difference between processing and committing from the displayed state.
+- [ ] Open **Examples → Commit too soon → Open example**. Flow opens with **Record skipped after restart**: stored records `1`, saved next offset `1`, processed deliveries `0`, records read after restart `0`. **Activity** contains a lost-delivery event. The stored record remains in the topic; only this group's unfinished work is skipped. Already processed records must not be falsely labelled as lost.
+- [ ] In **Activity**, inspect a partition and a message, then a worker/group through **Workers**. Inspectors explain what changed and identify existing source files. Charts and the timeline follow actual state and retain bounded histories during a longer run.
+- [ ] Use a short experiment, then reset. Underlying record and delivery history are retained across refresh and may grow during continuous production; confirm simulator reset clears that state while it does not clear Practice progress.
+
+## 7. Advanced concepts
+
+- [ ] Open **Customize → Advanced → Create 3-broker cluster**. Inspect leaders, replicas, ISR, and replication factor. Fail a leader's broker, observe election/ISR changes, then recover it. Choose `acks=0`, `acks=1`, and `acks=all`; inspect the displayed setting and produce acceptance when brokers are unavailable.
+- [ ] Press **Begin transaction**, **Append message**, and **Commit**. Repeat using **Abort**. Transaction state and timeline change. The UI explains that this is an educational boundary, not Kafka's distributed protocol.
+- [ ] In **Consumer liveness**, choose a worker and press **Record heartbeat**. Run the simulation to advance time; inspect missed heartbeats and timeout events in Activity. Review the session-timeout and max-poll policy settings.
+- [ ] Change delivery/liveness policies. Confirm settings are retained and labelled educational: retries, idempotence, retention, compaction, dead-letter routing, exactly-once, and cooperative rebalance. These state-only concepts must not be described as a working Kafka protocol.
+- [ ] In **Producer batching**, change batch size, linger, and compression and press **Apply settings**. The current settings update. Press **Register schema** twice and inspect versions; press **Create topology** and inspect source, sink, and operations.
+
+## 8. Keyboard, motion, and smaller screens
+
+- [ ] Use keyboard only: route links, toolbar buttons, canvas nodes/connections, selected inspector, customization sections/inputs, and Guide exercise. Focus stays visible and controls have useful names.
+- [ ] With keyboard focus on a partition record row, press `Enter`. Confirm only the record inspector opens; the parent partition is not also selected. Press `Escape` and confirm focus can return to the row/canvas without a duplicate parent selection.
+- [ ] Enable the operating system's reduced-motion preference and reload. No moving packets are required to understand the flow; labels and values still update.
+- [ ] Check at a desktop width and approximately `390 × 844`. On mobile the chart remains readable by panning/zooming, all routes are usable, no page-level horizontal overflow appears, and the inspector does not trap access to navigation.
+- [ ] Confirm waiting, idle, paused, and failed states use text alongside color. Check browser console for uncaught errors during navigation, running, reset, and the lesson.
+
+## 9. Production acceptance
+
+- [ ] From the nested Next.js app directory, stop the development server. Run `npm run typecheck` and `../.agents/scripts/run-done-gate.sh .`; all required commands pass. Read the fresh review and confirm zero unresolved P0/P1 findings.
+- [ ] Run `npm run start`. Open `http://localhost:3000` and repeat the first lesson, Flow playback/inspection, navigation, and one custom send in the production build.
+- [ ] Record any remaining failures in the handoff. Keep the implementation at `READY_FOR_MANUAL_TEST` while this checklist is open, and mark `COMPLETE` only after you accept all required browser checks. Deployment remains a later task.
+
+## 10. Interview Guide and Practice
+
+- [ ] On **Guide**, complete the existing send/read/save exercise first. Then open each new collapsed learning section. Confirm the sections start collapsed, are keyboard accessible, and do not change simulator state.
+- [ ] Confirm the interview sections include concise Kafka answers, common traps, and situation based diagnosis that match the simulator's documented simplifications.
+- [ ] Open **Practice**. Confirm the hub links to exactly **Easy**, **Middle**, **Hard**, **Extreme Hard**, **Most Common**, **Trick**, and **Situation**, with saved answered counts.
+- [ ] Open each category URL. Confirm exactly 50 questions, four options per question, a stable current question indicator, and progress out of 50. Select an answer and confirm the selected state, correct state, and explanation appear.
+- [ ] Navigate away and back, change an answer, and reload. Confirm the selected category, selected question, answers, explanations, and progress restore. Reset one category and confirm only that category clears.
+
+## 11. Persistence and opening-flow copy
+
+- [ ] On `/`, confirm the visual canvas remains the focus and the visible/accessibility tree contains no `MESSAGE FLOW`, `Ready to run`, `Browser simulation`, or separate numbered/stage-label overlay. Node/edge names and active state remain understandable.
+- [ ] Change messages, consumers, playback settings, selection/layout, and chart activity. Navigate and reload; confirm serializable simulator/chart state restores with playback paused.
+- [ ] Reload during or immediately after a token transit. Confirm transient moving tokens are not replayed, while the persisted record, event, chart, and offset state remains correct.
+- [ ] Reset simulator state and confirm Practice answers remain. Reset a Practice category and confirm simulator/chart state remains.
+- [ ] Use browser storage controls to simulate missing, invalid, or quota-exceeded data. Confirm the app opens with a recoverable notice and can continue in memory.
+
+## 12. Compact technical partition cards and delivery outcomes
+
+- [ ] On a fresh browser, inspect all four compact partition cards. Each card shows two distinct orders, six records, unread/backlog, selected-group success/failure, and C/P/LEO without payload, timestamp, error, or full event rows in the default graph.
+- [ ] Select each partition to open its detail inspector. Confirm its bounded rows are sorted by partition-local offset and expose offset, key, value/event label, timestamp, selected-group state, attempt, and any failure reason only in the inspector. Replica details also remain inspector-only.
+- [ ] Verify the reference mixture: P0/0 is committed; P0/1 is application-successful but uncommitted; P1/0 has failure attempt 1 with committed offset 0; P2/0 is committed; P3/0 is read and pending; remaining records are queued. Confirm the full seed has eight distinct order keys and 24 records.
+- [ ] Verify each partition card or inspector shows owner, leader, replication factor, min ISR, and ISR. The three-broker metadata is clearly marked educational/local.
+- [ ] Confirm the default graph has no bulky detailed event table/chart. Open `/customize` Activity and a partition/record inspector to confirm detailed events and payload-level information remain available there.
+- [ ] Confirm the three producer nodes show actual independent counts for `checkout-api`, `payment-service`, and `shipping-service`; no implicit `producer-1` appears. Use `/customize` producer selection and automatic ticks to verify source identity and matching transit edge routing. Inspect a newly produced record and confirm its local `producerId`; inspect any pre-provenance persisted record and confirm it remains labelled unknown rather than receiving a guessed source.
+- [ ] Trigger or use a processing failure. Confirm the row keeps the same stored message ID, shows the attempt and error, leaves the committed offset unchanged, and offers a retry that creates another attempt for the same record.
+- [ ] Confirm the failure action itself does not advance the committed cursor. Try both processed and current-position commit controls and verify that each stops before the latest failed attempt, emits `offset-commit-blocked`, and identifies the safety-policy reason. Then use Commit too soon on pending unprocessed work and verify that it can skip that work while keeping the topic row stored. Real Kafka permits explicit commits past failed work; this stricter guard is local lab policy.
+- [ ] Process a queued record successfully without committing. Confirm its state changes to processed/succeeded while the committed cursor and record retention remain unchanged. Commit it separately and confirm only the group checkpoint changes.
+- [ ] Run **Commit too soon**. Confirm skipped/lost delivery is shown as unfinished application work for that group while the topic row remains stored. The commit indicator describes a checkpoint and never a payload deletion or business-success guarantee.
+- [ ] Confirm the opening view does not claim to visualize every Kafka wire protocol and that a read, failure, or commit never removes a record from a partition queue.
+- [ ] Produce more than six records in one partition, then select that partition. Confirm its inspector keeps a six-row window, pins the oldest unresolved failure, identifies hidden rows, and allows the visible rows to be inspected by scrolling. Confirm superseded delivery attempts do not exceed the documented 200-attempt history budget while latest group/message outcomes remain visible. The opening card stays the same size as record volume grows.
+- [ ] Confirm activity pulses disappear after roughly two seconds (`1800ms`) when the flow is running, and that pause, reset, route changes, or reduced motion clean up visual timers without changing stored records or outcomes.
+- [ ] Read the opening execution strip aloud: `stored`, `checkpoint Σ`, and `commit lag` are separate selected-group quantities. Confirm their tooltips explain record count, summed committed next offsets, and summed LEO-minus-commit lag.
+
+## 13. Kafka knowledge and ownership footer
+
+- [ ] Read the Guide, Advanced concept lab, selected inspectors, scenarios, and at least one question from each Practice category. Confirm claims match [`docs/KAFKA_KNOWLEDGE_AUDIT.md`](KAFKA_KNOWLEDGE_AUDIT.md), distinguish simulator simplifications, and avoid unqualified `guarantee`, `always`, `never`, `delete`, or `exactly once` language.
+- [ ] In Advanced, set `acks=all` and inspect current ISR/min ISR. Verify the explanation does not say every broker or consumer must acknowledge. Fail one broker in the reference cluster and confirm acceptance follows the configured ISR/min-ISR educational rule.
+- [ ] Visit `/`, `/customize`, `/guide`, `/practice`, and one category quiz. Confirm the shared footer uses black, warm white, gray, and red, includes app copyright, and shows supplied creator details or the exact `Creator details pending` placeholder.
+
+## 14. Packet lifecycle and guided experiments — prior slice continuation
+
+Prior milestone status: `READY_FOR_MANUAL_TEST`. Its final typecheck, lint, 167 tests / 14 files, production build, fresh final source re-review, main/broader/supplemental browser suites, and root image inspection passed before the current theme/dialog change. [Main browser](../.agents/review/artifacts/packet-learning/after-fix.json) records that packet/lesson behavior; [supplemental browser](../.agents/review/artifacts/packet-learning/supplemental-browser.json) records readable local table scrolling, independent resets with an answered quiz, and invalid/quota-blocked storage recovery. Scope and historical evidence are in [PACKET_LEARNING_REVIEW.md](../.agents/review/PACKET_LEARNING_REVIEW.md). Automated background coverage overrides `document.visibilityState` in an isolated document and dispatches `visibilitychange`; native handler behavior has hook-test coverage. Natural tab-backgrounding and every item below remain user acceptance and are unchecked until accepted. Use normal Customize Activity for detailed state; StepInspector checks are retired by section 15.
+
+- [ ] On Flow while paused, send three fresh orders separately with more than two seconds between them. Each new packet begins at its source, travels through its correctly routed producer/topic/partition segments, and disappears within the `1800ms` visual TTL. A later packet never freezes because the canvas has been open longer. Inspect Activity to match actual record identity/partition/source.
+- [ ] Send during playback, pause, navigate away and back, reload, background the tab for several seconds, return, and reset in separate trials. Old packets never replay or remain frozen. A fresh send after each transition still works. Decorative cleanup preserves real records/events/offsets except for the explicitly requested simulator reset, and it does not erase Practice or learning progress.
+- [ ] With reduced motion enabled, no token moves or `animateMotion` runs. Matching text/state remains useful. A batch larger than 24 keeps the visible packet count bounded and preserves inspector/selection behavior.
+- [ ] On Guide, finish the original Send example → Read record → Save progress exercise. It still stores exactly one `order-7F3K9` / `order-created` record and pauses reading without producing another record. The deeper layer has exactly five initially collapsed keyboard-accessible experiments.
+- [ ] Open disclosures and select predictions without running. Simulator state does not change. Run is unavailable until a prediction exists; wrong predictions can still run. Each Run visibly explains that it replaces the current simulator workflow. Each result identifies captured Before/After evidence, an explanation, an interview follow-up, and a local-simulation boundary; links expose the actual result on Flow/Customize.
+- [ ] Run **Same key, ordered lane**. Inspect three actual stored messages: the same key maps to one partition with offsets 0, 1, 2 while topology/partitioner stay fixed. Explain partition-local ordering and the risk of changed routing after partition expansion.
+- [ ] Run **Success, crash, replay**. Before shows processed work with committed offset 0; after shows the same message ID/partition/offset with another attempt and unadvanced manual commit. Explain how an external idempotency boundary would handle repeated side effects.
+- [ ] Run **Save too early, skip work**. Before has one stored/read-pending record and commit 0. After has stored 1, committed 1, processed 0, restarted poll 0, and actual skipped/lost evidence. Explain why a checkpoint proves neither business success nor record deletion.
+- [ ] Run **More workers, one hot partition**. Compare the complete actual assignment map and idle member IDs before/after adding members: five consumers, three partitions, at most three members with partitions and two idle members; one owner still holds the hot key's partition. The explanation qualifies deterministic local assignment and does not claim measured production throughput.
+- [ ] Run **Retry the record, then save**. Compare failure attempt 1 and the visibly displayed safe reason to a later successful attempt for the same stored message ID/partition/offset. Count and committed cursor stay unchanged after retry. Use the separate manual commit step, then confirm actual committed cursor advancement while the record remains. Change the workflow, group, owner, or restart/read position before committing another trial; stale commit must be disabled and must not report successful progress. Failed-work blocking is labelled local safety policy.
+- [ ] Navigate and reload after selecting predictions/completing experiments. Independent `kafkalab:learning:v1` progress restores without running or resetting anything; captured results are not restored as current live state. **Inspect current Flow** opens the present shared workflow and makes no promise it still matches an earlier captured run. Clearing learning progress preserves simulator/chart state and Practice answers; simulator reset and Practice reset independently preserve learning progress. Invalid/unavailable learning storage keeps the lessons usable.
+- [ ] At 320px and 390px, run a lesson and the retry/manual commit lesson. Comparison columns stay readable; swipe the local table region to reach every Before/After/After commit value. The mobile swipe hint is visible. Tab to the labelled scroll container and scroll with the keyboard; the page itself has no horizontal overflow.
+- [ ] In an isolated browser session, simulate learning-storage write failure/quota exhaustion without clearing the user's stored data. A recoverable notice appears, predictions/completion remain usable in memory, and simulator/Practice state is preserved. Use a real answered Practice question when checking that all three reset domains remain independent.
+- [ ] Read awaiting-commit copy and append/checkpoint explanations. Unsaved group progress must not imply business processing is unfinished. Producer/topic animation is a teaching append path, and commit animation is a group checkpoint path. Advanced educational flags, transactions, replication metadata, and heartbeat controls do not imply executed production broker protocols.
+- [ ] Record the historical packet/learning gate, browser QA, and fresh independent review evidence and user acceptance. For the current theme/dialog slice, follow section 15's permitted static checks and NOT RUN test limit; do not rerun the bundled test gate without an explicit request. User acceptance is still required before `COMPLETE`. Archives, deployment, and destructive browser-storage resets are outside these checks.
+
+## 15. Historical theme and dialog checks
+
+Status: `READY_FOR_MANUAL_TEST`; final typecheck/lint/build pass (exit 0) and fresh source re-review reports 0 P0/P1/actionable P2. [Current evidence](../.agents/review/THEME_DIALOG_REVIEW.md). The production app is running on port 3000 with one listener at handoff. Full automatic test gate is NOT RUN; no tests added or run. One obsolete existing route-workspaces test case was adapted in place but remains unrun. Visual/browser behavior and all items below remain manual acceptance. The bounded contract is [THEME_AND_DIALOG_REMOVAL.md](THEME_AND_DIALOG_REMOVAL.md).
+
+- [ ] Open Flow and select several nodes and links using mouse and keyboard. No INSPECT STEP dialog, close button, partition/message overlay, hidden focus trap, or replacement drawer appears. Canvas selection/focus, toolbar, pan/zoom/minimap, compact cards, and finite packets remain useful.
+- [ ] Visit all six Customize sections and run one example. No StepInspector appears over any section. Normal Activity partition/detail panels, embedded InspectorPanel, timeline/metrics, configuration controls, and actual record/outcome data remain available.
+- [ ] Use a worker explanation by keyboard: Activity opens and its heading receives focus. Select a failed Activity record: actual attempt/reason and eligible retry remain available. Retry focuses the retained record heading when the action disappears; processing and a manual commit remain separate.
+- [ ] With no saved theme preference, the app starts light. The shared header's far-right toggle is available on Flow, Customize, Guide, Practice, and a category quiz; its action/current state is understandable without color and its focus is visible.
+- [ ] Use Enter/Space to change theme and verify the whole app in both appearances: shell/header/navigation/footer, canvas/node/link/controls/minimap, Customize forms/charts/Activity, Guide/experiment tables, Practice hub/questions/selected/correct feedback. Dark uses readable charcoal/gray/red styling and light uses warm white/black/gray/red.
+- [ ] Save dark, reload each route directly, and check the first visible frame. The valid preference is retained without a light flash or hydration mismatch. Repeat for light. Missing/invalid preference defaults to light; unavailable/quota-blocked theme storage leaves session switching usable in an isolated session without clearing the user's data.
+- [ ] At 320px and 390px, the toggle remains at the far right, navigation is reachable, no page overflow appears, and comparison tables still scroll locally with readable columns and keyboard access. Reduced motion and important state labels remain useful in both themes.
+- [ ] Before/after switching theme, compare actual stored records/IDs, offsets, attempts, playback, chart history, an answered quiz, and learning predictions/completion. Theme does not reset or advance any of them. Simulator reset, Practice reset, and Clear learning progress preserve the chosen theme; changing theme preserves the other stores.
+- [ ] Complete the original one-record Guide exercise and one deeper experiment. Examples and failure/retry/manual-commit semantics remain actual local simulation behavior without a step overlay or claim of production Kafka execution.
+- [ ] Record permitted static check/source-review results and every verification limit. Keep user acceptance unchecked until accepted; do not treat the previous 167-test/browser record or a current build as proof of theme, reload flash, or dialog behavior.
+
+## 16. Focused chart tabs and tooltips — current slice
+
+- [ ] Open `/` at desktop width. Header navigation contains only Flow, Guide, and Practice. The workspace has only Run/Pause and Reset workflow controls, with no Send order, Load reference flow, execution metrics strip, Explore controls & activity link, or Customize link.
+- [ ] Confirm the default Flow tab shows the seeded producer → topic → partition → consumer → checkpoint chart. The bottom tab bar contains Flow, Partitions, Consumers, Offsets & lag, Delivery, Replication, and Activity, with Flow selected initially.
+- [ ] Activate each tab with mouse and keyboard. ArrowLeft/ArrowRight, Home, and End move selection and focus; the selected tab exposes its matching panel and the bar scrolls horizontally on narrow screens.
+- [ ] Hover a producer, partition, consumer, offset, delivery, replication, and activity node. Each shows one contextual tooltip with readable labels, real counts/status, and `unknown` or `unavailable` where data is absent; no click-pinned dialog appears.
+- [ ] Navigate to a node with the keyboard. Focus shows the same tooltip with `role="tooltip"` and an accessible relationship to the focused node. Escape or moving focus does not leave a floating panel behind.
+- [ ] In Partitions, Consumers, Offsets & lag, Delivery, and Activity, confirm values update from the same simulator snapshot and no node is created for an individual message. In Replication, confirm the no-cluster explanation appears after Reset and broker/leader/replica/ISR details appear after the internal reference fixture is loaded by Guide/test flow.
+- [ ] Drag nodes and change the viewport in Flow, then repeat in Partitions. Return to each tab and refresh; positions and viewports remain independent. Older saved layout data restores into Flow without appearing in other tabs.
+- [ ] Run, pause, and reset the workflow. Reset restores the deterministic empty learning state, clears chart layout, leaves Guide/Practice learning progress intact, and does not add a new visible control.
+- [ ] Check the footer at desktop and approximately `390 × 844`. It remains visible with current-year copyright and `HANZO` creator branding. Confirm `/customize` returns a 404 directly and no Guide or experiment link points to it.
+- [ ] Repeat the chart and tooltip checks with reduced motion enabled. No packet animation is required for comprehension; node status, counts, labels, focus, and tooltip content remain usable.

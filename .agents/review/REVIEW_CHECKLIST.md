@@ -1,0 +1,53 @@
+# Review checklist
+
+- [ ] Does the engine preserve partition-local monotonic offsets?
+- [ ] Is committed offset the next record to read?
+- [ ] Is lag `LEO - committedOffset`?
+- [ ] Can one group assign a partition to only one active consumer?
+- [ ] Are idle consumers visible?
+- [ ] Are group offsets independent?
+- [ ] Does join/leave trigger deterministic rebalance?
+- [ ] Are duplicate/loss scenarios explained correctly?
+- [ ] Is the core free of UI/framework imports?
+- [ ] Are visible record windows, timeline/chart history, and animation bounded, with retained logical history and the reset boundary documented honestly?
+- [ ] Are acceptance criteria current and verification limits stated? For the theme/dialog-removal slice, no tests are added/run; the full automatic test gate is NOT RUN under higher-priority scope, and old test expectations cannot require restoring StepInspector.
+- [ ] Is there backend/infrastructure scope creep beyond the local-first product boundary?
+- [ ] Are accessibility and reduced-motion requirements covered?
+- [ ] Does every visible flow node and edge come from simulation state?
+- [ ] Are flow IDs stable and graph rendering bounded?
+- [ ] Can a learner understand the route without long canvas copy?
+- [ ] For the current explicit request, is the whole StepInspector/INSPECT STEP component/overlay removed from Flow and Customize without replacement, while normal selection/focus and Customize Activity details remain useful?
+- [ ] Does node movement avoid mutating Kafka simulation state?
+- [ ] Does the process canvas use red, black, white, and gray consistently?
+- [ ] Is `/` almost entirely the polished process-flow canvas?
+- [ ] Are custom actions, forms, configuration, metrics, and timeline on `/customize`, with only compact playback/sample/reset and selected inspection on `/`?
+- [ ] Is the send/read/save walkthrough on `/guide`, with its reset and disabled automatic commit explained before starting?
+- [ ] Do route transitions preserve one client-side simulation state?
+- [ ] Do both light default and charcoal/gray/red dark styling cover text/focus/canvas/charts/inputs, with an accessible far-right shared-header toggle, validated independent persistence, and saved preference before visible paint?
+- [ ] Is important state understandable without color alone?
+- [ ] Is the Guide send/read/save exercise unchanged and are interview disclosures collapsed, keyboard accessible, and simulator neutral?
+- [ ] Does Practice expose exactly seven fixed category routes and exactly 50 four-option questions per category with stable IDs, explanations, and progress?
+- [ ] Does reload restore simulator/chart state, selected Practice category/question, and answers with playback paused?
+- [ ] Do simulator and Practice resets remain independent, with recovery for invalid or unavailable localStorage?
+- [ ] Is opening Flow free of `MESSAGE FLOW`, `Ready to run`, `Browser simulation`, and the separate stage-label overlay while graph semantics remain accessible?
+- [ ] Does each record token use a real message ID, source event ID, partition, offset, phase, and attempt?
+- [ ] Do produced, polled, and committed tokens travel only across the matching stable edge IDs?
+- [ ] Are poll and commit events rich enough to resolve message identity or exact committed ranges without guessing?
+- [ ] Is the token visual queue bounded at 24 with no per-record React Flow nodes or Kafka state mutation?
+- [ ] Are duplicate attempts represented by the same record ID, and are node/edge selectors stable while tokens move?
+- [ ] Does reduced motion remove movement and `animateMotion` while retaining textual state, and are transient tokens excluded from persistence?
+- [ ] Does fresh boot load the exact paused reference workload, with empty reset and explicit reference loading preserved?
+- [ ] Does fresh boot load the exact compact four-partition reference with three real producers, four consumers, eight order keys, 24 records, exactly two committed records, and initial lag 22?
+- [ ] Does the default graph use four compact cards with order/record counts, unread/backlog, success/failure, and C/P/LEO, without a detailed event table/chart or payload/timestamp/error/replica columns?
+- [ ] Does partition inspection keep a six-row window, pin the oldest unresolved failure, allow visible rows to scroll, and retain latest group/message outcomes while superseded attempts use the 200-attempt budget?
+- [ ] Are inspected rows ordered by local offset and rich enough to show key/value, timestamp, attempt, group-scoped outcome, failure reason, LEO, current/committed offsets, lag, owner, leader, RF, min ISR, and ISR?
+- [ ] Are producer nodes, producer selection, per-producer counts, events, messages, and transit tokens backed by real producer IDs with no implicit `producer-1`; do four actual consumers own P0–P3?
+- [ ] Is `producerId` clearly labelled as optional local teaching provenance rather than an intrinsic Kafka record/wire field? Do newly produced records trace to their source while older persisted records remain unknown without migration/reset? Does the opening toolbar create fresh unique order keys while Guide keeps `order-7F3K9`?
+- [ ] Is processing success/failure stored on delivery attempts, with failure retaining the topic record and committed offset, and retry reusing the message ID with a new attempt?
+- [ ] Does the review explain that both commit modes stop before the latest failed attempt and emit `offset-commit-blocked`, while current-position/commit-too-soon skips only pending unprocessed work under the lab safety policy? Does it state that real Kafka permits explicit commits past failed work?
+- [ ] Do activity pulses expire around `1800ms`, clean up on pause/reset/unmount, and leave simulation state unchanged? Does the execution strip separately label `stored`, `checkpoint Σ`, and `commit lag`?
+- [ ] Do normal Activity record/detail controls remain keyboard accessible without opening the retired step overlay or imposing its focus/Escape behavior?
+- [ ] Does `acks=all` use current ISR and min ISR instead of requiring every configured replica?
+- [ ] Does the commit visual communicate a group checkpoint without suggesting payload deletion or business success?
+- [ ] Is every Guide, Advanced, inspector, scenario, and Practice claim reconciled with `docs/KAFKA_KNOWLEDGE_AUDIT.md` and official Apache sources?
+- [ ] Does every route show the shared footer with copyright and creator details or the exact pending placeholder?
