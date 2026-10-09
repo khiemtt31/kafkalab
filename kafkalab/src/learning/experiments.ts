@@ -90,13 +90,29 @@ export function canCommitExperiment(result: ExperimentResult, snapshot: KafkaLab
   const record = snapshot.partitions.flatMap((lane) => lane.messages).find((candidate) => candidate.id === result.recordId);
   const lane = snapshot.partitions.find((candidate) => candidate.id === result.partition);
   const owner = snapshot.consumers.find((candidate) => candidate.id === lane?.assignedConsumerId);
-  return result.id === "failure-retry-commit" && !result.committed && !snapshot.running
-    && result.revision === (snapshot.resetRevision ?? 0) && result.after.group === snapshot.selectedGroupId
-    && record?.delivery?.applicationStatus === "succeeded"
-    && owner?.id === record.delivery.consumerId && owner.status !== "dead"
-    && (owner.currentOffsets[record.partition] ?? 0) > record.offset
-    && record.delivery.attempt === result.after.records.find((candidate) => candidate.id === result.recordId)?.attempt
-    && snapshot.partitions.find((lane) => lane.id === result.partition)?.committedOffset === result.before.positions.find((lane) => lane.partition === result.partition)?.committed;
+  const capturedRecord = result.after.records.find((candidate) => candidate.id === result.recordId);
+  const capturedLane = result.after.positions.find((candidate) => candidate.partition === result.partition);
+  if (result.id !== "failure-retry-commit" || result.committed || snapshot.running
+    || result.revision !== (snapshot.resetRevision ?? 0) || result.after.group !== snapshot.selectedGroupId
+    || !record || !lane || !owner || !capturedRecord || !capturedLane
+    || record.delivery?.applicationStatus !== "succeeded" || owner.id !== record.delivery.consumerId || owner.status === "dead"
+    || owner.groupId !== result.after.group || capturedLane.owner !== owner.id
+    || record.partition !== capturedRecord.partition || record.partition !== lane.id || record.offset !== capturedRecord.offset
+    || record.delivery.attempt !== capturedRecord.attempt || capturedLane.read <= record.offset) return false;
+
+  // commitConsumer saves all of this owner's lanes. Every affected assignment,
+  // read position, and checkpoint must still match the captured retry evidence.
+  const capturedOwned = result.after.positions.filter((position) => position.owner === owner.id);
+  const liveOwned = snapshot.partitions.filter((position) => position.assignedConsumerId === owner.id);
+  if (capturedOwned.length !== owner.assignedPartitions.length || capturedOwned.length !== liveOwned.length) return false;
+  return capturedOwned.every((position) => {
+    const live = liveOwned.find((candidate) => candidate.id === position.partition);
+    return owner.assignedPartitions.includes(position.partition) && !!live
+      && (owner.currentOffsets[position.partition] ?? owner.committedOffsets[position.partition] ?? 0) === position.read
+      && (live.currentOffset ?? 0) === position.read
+      && (owner.committedOffsets[position.partition] ?? 0) === position.committed
+      && (live.committedOffset ?? 0) === position.committed;
+  });
 }
 
 export function commitExperiment(result: ExperimentResult): ExperimentResult {

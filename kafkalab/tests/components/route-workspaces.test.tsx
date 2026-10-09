@@ -1,8 +1,9 @@
 import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GuidePage } from "@/components/GuidePage";
 import { useKafkaStore } from "@/store/kafka-store";
+import { useLearningProgress } from "@/learning/progress";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children: ReactNode }) => (
@@ -13,6 +14,8 @@ vi.mock("next/link", () => ({
 describe("route workspace interactions with the real simulation store", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    localStorage.clear();
+    useLearningProgress.setState({ progress: {}, hydrated: false, notice: undefined });
     useKafkaStore.getState().actions.reset();
   });
 
@@ -89,6 +92,16 @@ describe("route workspace interactions with the real simulation store", () => {
     fireEvent.click(screen.getByText("Kafka concepts", { selector: "summary" }));
     expect(screen.getByText("Why is ordering scoped to a partition?")).toBeVisible();
     expect(useKafkaStore.getState().snapshot.resetRevision).toBe(beforeRevision);
+  });
+
+  it("opens with one actionable challenge and keeps explanatory reading secondary", () => {
+    render(<GuidePage />);
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Make the failure make sense." })).toBeVisible();
+    expect(screen.getByRole("group", { name: /Three events share an order key/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Run challenge" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: "Open Practice" })).toHaveAttribute("href", "/practice");
+    expect(screen.queryByText("A few things to look for")).not.toBeInTheDocument();
   });
 
 });
