@@ -1,82 +1,82 @@
-# Kafka Visual Learning Lab
+<div align="center">
+  <h1>KafkaLab · Application</h1>
+  <p><strong>Interactive Kafka learning, powered by a browser simulator.</strong></p>
+  <p>
+    <a href="https://kafkalab-six.vercel.app">Open Flow</a> ·
+    <a href="https://kafkalab-six.vercel.app/guide">Guide</a> ·
+    <a href="https://kafkalab-six.vercel.app/practice">Practice</a>
+  </p>
+</div>
 
-This repository contains the complete local-first Kafka Visual Learning Lab, its implementation workflow, Codex skills, sub-agent roles, completion gates, and manual test plan.
+The Next.js application lives in this directory. Its learning loop is **predict → run → inspect actual evidence → explain → try another case**. The shared simulator powers the chart, five causal challenges, and the first-record exercise.
 
-The simulator teaches Kafka by making this loop visible:
+## Pages
 
-```text
-user action → simulator transition → Kafka concept → visible state change
-```
-
-The opening screen is a focused, almost full-screen node-and-link learning canvas. Seven Excel-style tabs project the same Kafka snapshot as Flow, Partitions, Consumers, Offsets & lag, Delivery, Replication, and Activity views. React Flow provides pan/zoom/fit/minimap, node movement, and accessible selection. Nodes expose contextual details on pointer hover or keyboard focus through accessible tooltips. The main page keeps only Run/Pause and Reset workflow; Guide, Practice, saved records, learning progress, and HANZO branding remain available.
-
-### Application routes
-
-| Route | Purpose |
+| Route | Experience |
 | --- | --- |
-| `/` | Beginner-friendly live chart with seven selectable projections, Run/Pause, Reset workflow, and accessible node tooltips. |
-| `/guide` | The original one-record send/read/save lesson, five collapsed prediction/run/observe/explain experiments, and interview reference material. |
-| `/practice` | Interview practice category hub with saved answered counts. |
-| `/practice/easy` through `/practice/situation` | Seven fixed 50-question quiz categories with selected-answer explanations and progress. |
+| [Flow · `/`](https://kafkalab-six.vercel.app/) | Focused partition paths with visible handler, failure, ownership, and checkpoint evidence; a selectable prediction challenge; seven chart perspectives. |
+| [Guide · `/guide`](https://kafkalab-six.vercel.app/guide) | One active prediction/run/evidence lesson, the Send example / Read record / Save progress exercise, and collapsed reference answers. |
+| [Practice · `/practice`](https://kafkalab-six.vercel.app/practice) | Seven categories, 50 questions each, with answer explanations and saved progress: 350 questions in total. |
 
-It is a teaching simulator rather than a Kafka administration dashboard or a real broker client. A fresh browser opens a paused reference workload with three real producers (`checkout-api`, `payment-service`, `shipping-service`), four partitions, four consumers, eight distinct order keys, 24 records, and a three-broker RF3/min-ISR2 educational cluster. Newly produced records may carry optional local `producerId` teaching provenance for source inspection; this is not a Kafka record or wire-protocol field, and older saved records remain valid with unknown source. The internal reference fixture remains available to Guide experiments and deterministic tests, but has no visible main-page load or send action. Reset returns to the empty Guide learning state. The simulation is intentionally self-contained so it runs locally without infrastructure and can be deployed later as a client-side Next.js app. Application processing failure remains a delivery-attempt state; reading or committing never removes the topic record.
+Category pages: [Easy](https://kafkalab-six.vercel.app/practice/easy), [Middle](https://kafkalab-six.vercel.app/practice/middle), [Hard](https://kafkalab-six.vercel.app/practice/hard), [Extreme hard](https://kafkalab-six.vercel.app/practice/extreme-hard), [Most common](https://kafkalab-six.vercel.app/practice/most-common), [Trick questions](https://kafkalab-six.vercel.app/practice/trick), and [Situations](https://kafkalab-six.vercel.app/practice/situation).
 
-The five Guide experiments cover keyed ordering, replay after success without commit, skipping work by committing too soon, worker scaling with a hot partition, and failure/retry/manual commit. Choose a prediction before Run; the visible notice explains that Run replaces the workflow. Actual captured Before/After state explains each result, and the retry lesson requires a separate guarded manual commit. **Inspect current Flow** opens the shared live workflow, which can differ from an earlier captured run. Completion records participation rather than production Kafka mastery; advanced flags and metadata remain educational boundaries.
+The seven perspectives are Flow, Partitions, Consumers, Offsets & lag, Delivery, Replication, and Activity. Essential evidence appears in the chart and diagnosis; optional node details open deliberately with **Details** or **F2** on a focused node. The retired `/customize` route returns 404.
 
-## Read first
+## Development
 
-1. [guide.md](guide.md) — how to turn a request into a documented, tested change.
-2. [CHECKLIST.md](../CHECKLIST.md) — the complete build and manual-test checklist.
-3. [docs/PROJECT_SPEC.md](../docs/PROJECT_SPEC.md) — architecture and Kafka semantics.
-4. [docs/DEFINITION_OF_DONE.md](../docs/DEFINITION_OF_DONE.md) — completion gates.
-5. [AGENTS.md](AGENTS.md) — routing and ownership rules for Codex.
-
-## Runtime boundary
-
-The application is client-side and deployable later to a compatible Next.js host. The core simulation is pure TypeScript and is adapted into Zustand before React renders it. The route shell owns navigation and delivery configuration; the visualization owns graph projection and canvas styling.
-
-Required stack:
-
-```text
-Next.js, React, strict TypeScript, Tailwind CSS,
-Zustand, @xyflow/react, Vitest, React Testing Library
-```
-
-Playwright and Web Workers are optional tools; the complete product does not depend on either one.
-
-## Run locally
-
-The earlier packet/learning handoff left a production server at `http://localhost:3000`; that historical server/browser record does not verify the current theme/dialog-removal changes. Before a later manual server-mode switch or rebuild, stop the app and verify port 3000 is free:
+Use **Node.js 22.22.2 or newer within Node.js 22**. From the repository root:
 
 ```bash
-npm run stop
-lsof -nP -iTCP:3000 -sTCP:LISTEN
-```
-
-The port check should show no listener. Then start one chosen mode:
-
-```bash
-npm install
+cd kafkalab
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. Before production verification, repeat the stop/free-port check above, then use:
+Open [localhost:3000](http://localhost:3000). There are no required environment variables or backend services.
+
+Run checks sequentially from this directory:
 
 ```bash
 npm run lint
-npm run typecheck
+npm run test
 npm run build
-npm run start
+npm run typecheck
 ```
 
-The app has no required environment variables and no backend dependency. Deploy later to a Node-capable Next.js host with `npm run build` followed by `npm run start`, or adapt the delivery shell to a static host after choosing the hosting target.
+Build generates Next.js route types needed by typecheck on a fresh checkout. For a local production preview, stop the development server, then run `npm run build` and `npm run start`; both server modes use port 3000.
 
-The automated checks cover the seven projections, bounded graph identities, replication empty/cluster states, tooltip semantics, tab navigation, persistence migration, Guide behavior, Practice progress, and the deterministic reset contract. Visual coverage, keyboard/mobile layout, tab scrolling, tooltip placement, reduced motion, and direct `/customize` 404 behavior remain manual checks.
+## Architecture and state
 
-Use short experiments and reset between longer runs. The graph, six-row partition windows, timeline/chart samples, and animation activity are bounded. Stored topic messages and the latest delivery outcome for each group/message persist in browser storage; superseded delivery attempts use the 200-attempt history budget. The oldest unresolved failure stays reachable in a partition window, and visible rows can be inspected by scrolling. Learning predictions/completion use independent validated `kafkalab:learning:v1` storage. Simulator reset, Practice category reset, and **Clear learning progress** each preserve the other progress stores. Playback restores paused after reload, without packets or captured learning results being replayed. Continuous production can increase processing cost and browser quota use.
+The application uses Next.js, React, strict TypeScript, Zustand, Tailwind CSS, and React Flow. Vitest and React Testing Library cover Kafka invariants and user interactions.
 
-The footer reads public creator details from `src/config/site-profile.ts`. The current creator/brand is `HANZO`, and the footer displays the current-year copyright with that attribution on every route.
+| Location | Responsibility |
+| --- | --- |
+| [`src/core/kafka/`](src/core/kafka/) | Pure TypeScript simulation: records, partitions, groups, processing, and offsets. |
+| [`src/store/kafka-store.ts`](src/store/kafka-store.ts) | Shared actions, snapshot adaptation, playback, and workspace persistence. |
+| [`src/learning/`](src/learning/) | Experiment fixtures, captured evidence, learning progress, and live diagnosis. |
+| [`src/components/`](src/components/) | Flow projections, canvas, Guide, and Practice interface. |
+| [`tests/`](tests/) | Domain and interaction coverage. |
 
-## Completion status
+All Kafka behavior runs locally in the browser. A challenge's explicit Run action replaces the shared workflow with a paused fixture. Selecting a lesson or prediction is passive. Retry and commit remain separate, and captured commits are rejected after relevant live state changes.
 
-The current chart simplification is implemented. Static checks, the automated test suite, and the production build are the local verification gates; browser-sized layout checks remain manual.
+Browser storage saves workflow/layout, learning progress, Practice answers, and theme preferences. Resetting one domain preserves the others. Reload restores the simulator paused without rerunning a challenge or restoring its captured evidence. Storage belongs to the browser and origin, so production and localhost maintain separate progress.
+
+These are educational Kafka models, with explicit boundaries for distributed protocols and external side effects. Use short experiments and reset between longer runs; continuously produced records can grow browser storage.
+
+## Vercel deployment
+
+| Setting | Value |
+| --- | --- |
+| Framework preset | Next.js |
+| Root Directory | `kafkalab` |
+| Install command | `npm ci` |
+| Build command | `npm run build` |
+| Output directory | Framework default |
+
+The framework and commands are recorded in [`vercel.json`](vercel.json). See [deployment instructions](../docs/DEPLOYMENT.md).
+
+## Working on a change
+
+Start with the [current Flow & Guide contract](../docs/FLOW_GUIDE_LEARNING_REDESIGN.md), [project specification](../docs/PROJECT_SPEC.md), and [repository instructions](AGENTS.md). Preserve Practice progress, independent resets, and the distinction between captured experiment evidence and live chart state.
+
+The [handoff checklist](../CHECKLIST.md) records engineering checks; the [current source review](../.agents/review/FLOW_GUIDE_LEARNING_REVIEW.md) records review scope. Browser interaction, mobile layout, theme appearance, and learning acceptance require the [current manual checks in section 17](../docs/MANUAL_TEST_CHECKLIST.md#17-flow-and-guide-learning-redesign--current-slice).

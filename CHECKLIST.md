@@ -2,7 +2,38 @@
 
 Check items in order. Do not start a later milestone while an earlier milestone has failing automated checks.
 
-## Current handoff — 2026-10-07: live chart connections and related UI fixes
+## Vercel release — 2026-10-10
+
+status: `RELEASED`; learning acceptance remains `READY_FOR_MANUAL_TEST`.
+
+- [x] Refresh both READMEs with the current learning experience, live page links, and all seven Practice categories.
+- [x] Fresh [release readiness review](.agents/review/VERCEL_RELEASE_REVIEW.md) approves the documentation, project settings, and current upload manifest; P0/P1/actionable P2 = 0.
+- [x] Deploy the reviewed local application to [production](https://kafkalab-six.vercel.app). Vercel deployment `dpl_Fp36AJWHTspFwE9o5uSe5y1JCTSR` is `READY`, targets production, and owns that domain. Vercel's clean install, production build, and TypeScript compilation pass.
+- [x] Public HTTP checks pass: Flow, Guide, Practice hub, and all seven categories return 200; `/customize` returns 404. Local evidence: [route smoke](.agents/review/artifacts/flow-guide/vercel-route-smoke.json) and [deployment inspection](.agents/review/artifacts/flow-guide/vercel-deployment.json).
+- [ ] Complete current manual section 17 and record user acceptance.
+
+The CLI release uploaded the local source, including the Flow/Guide changes. No commit or push was performed during deployment, so the release does not establish GitHub CI coverage of these changes. [Deployment details](docs/DEPLOYMENT.md#current-release--2026-10-10) record the immutable URL and source fingerprint. HTTP checks prove public route availability; browser interaction and visual acceptance remain open.
+
+## Current handoff — 2026-10-09: interactive Flow and Guide learning
+
+status: `READY_FOR_MANUAL_TEST`
+
+Follow [FLOW_GUIDE_LEARNING_REDESIGN.md](docs/FLOW_GUIDE_LEARNING_REDESIGN.md). Flow now combines a question, a focused real partition path, live diagnosis, and a shared prediction/run/evidence challenge. Guide leads with one active experiment and keeps its first-record exercise and optional production reference. This request supersedes older canvas-only and collapsed-only constraints; Practice and removed routes/dialogs stay intact.
+
+- [x] Align requirements, teaching invariants, and manual section 17 through `improvement-qa.bot`.
+- [x] Integrate focused graphs, application outcome branches, deliberate optional details, live diagnosis, and shared learning workbench.
+- [x] Final root `npm run typecheck`, `npm run lint`, `npm test` (19 files / 206 tests), and `npm run build` pass. The final CSS hardening was rebuilt successfully after these JavaScript checks. Build and typecheck ran sequentially.
+- [x] Inspect the final diff; `git diff --check` passes. Fresh independent [source review](.agents/review/FLOW_GUIDE_LEARNING_REVIEW.md) approves the final tree with P0/P1/actionable P2 = 0; reviewer independently passes 27 relevant tests and re-reviews the final CSS specificity.
+- [x] Final [production route smoke](.agents/review/artifacts/flow-guide/route-smoke.json) passes: Flow, Guide, Practice hub, and seven Practice routes return 200; removed `/customize` returns 404. This proves HTTP responses, not rendered browser interaction.
+- [ ] Complete [manual checklist section 17](docs/MANUAL_TEST_CHECKLIST.md) and record user acceptance before `COMPLETE`.
+
+Browser setup returned `No browser is available`; discovery returned an empty list. No browser visual, touch, mobile, dark-theme appearance, or animation acceptance is claimed for this slice. Captured experiment evidence and the live canvas remain separately labelled. The subsequent Vercel release is recorded above; no commit or push was included in that deployment.
+
+Local production preview is running at `http://localhost:3000` from `kafkalab/` for user review. Restart with `cd kafkalab && npm run start` after a build, or use `npm run dev` for development. Section 17 covers: focused/whole-system paths and actual failure identity; prediction/run/evidence in all five cases; separate retry/manual commit and stale-read rejection; first-record exercise; Practice/progress/reset/reload independence; optional Details with keyboard dismissal; whole-system saved layouts versus temporary focus layouts; 320px/390px, both themes and reduced motion; retained navigation/footer and removed route/dialog. Only user/browser acceptance can finish these checks.
+
+Agents used: root orchestrator/integration, `improvement-qa.bot`, visualization, Guide developer, and fresh reviewer. No Kafka engine or Practice dataset was changed. The experiment adapter now rejects captured commits if any lane the owner would commit has changed assignment, read position, or saved position. Tests retain the actual additional-read and rebalance reproductions.
+
+## Historical handoff — 2026-10-07: live chart connections and related UI fixes
 
 status: `READY_FOR_MANUAL_TEST`
 
