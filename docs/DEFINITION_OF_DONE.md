@@ -1,6 +1,12 @@
 # Definition of Done
 
-## Current theme/dialog-removal scope
+## Current Flow/Guide learning redesign scope
+
+Follow [FLOW_GUIDE_LEARNING_REDESIGN.md](FLOW_GUIDE_LEARNING_REDESIGN.md) and manual section 17. The new question-led workbench, focused paths, visible diagnosis, and deliberate optional details supersede earlier Run/Reset-only and hover-first requirements. Meaningful tests, typecheck, lint, build, diff inspection, fresh independent review, and production HTTP smoke are engineering gates; browser visual/interaction acceptance remains separate. Exact final results are recorded in [CHECKLIST.md](../CHECKLIST.md).
+
+Whole-system layouts persist independently per view; focused paths use temporary canonical geometry. Preserve shared simulation, first-record exercise, Practice/learning/theme independence, removed Customize/INSPECT STEP, stable bounded graph entities, and honest captured versus live evidence.
+
+## Historical theme/dialog-removal scope
 
 The current chart simplification removes the Customize route, visible send/reference actions, execution strip, and floating inspector surfaces. It adds seven bounded chart projections, accessible hover/focus tooltips, per-variant layout persistence, and native bottom tab semantics while preserving simulator, Guide, Practice, learning, and HANZO footer data. Automated tests are authorized for this slice; browser UI acceptance remains manual.
 

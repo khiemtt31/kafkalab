@@ -1,6 +1,10 @@
 # Roadmap
 
-## Current UI slice: theme toggle and step-dialog removal — `READY_FOR_MANUAL_TEST`
+## Current UI slice: Flow and Guide learning redesign
+
+Follow [FLOW_GUIDE_LEARNING_REDESIGN.md](FLOW_GUIDE_LEARNING_REDESIGN.md): make chart perspectives answer concrete questions, expose real causal relationships and failure evidence, reuse the five shared prediction/experiment/evidence workflows on Flow and Guide, preserve the first one-record lesson, and remove redundant introduction/filler. Practice stays intact. The request supersedes passive tooltips and Run/Reset-only controls; `/customize` and INSPECT STEP remain removed. Record fresh implementation checks, independent review, and manual section 17 evidence. Earlier milestone gates do not certify this work.
+
+## Historical UI slice: theme toggle and step-dialog removal — `READY_FOR_MANUAL_TEST`
 
 Follow [THEME_AND_DIALOG_REMOVAL.md](THEME_AND_DIALOG_REMOVAL.md): remove the whole StepInspector/INSPECT STEP overlay and its Flow/Customize callers; retain normal Activity/configuration and existing learning/domain/progress behavior; add the far-right accessible persisted light/dark toggle with light default, whole-app dark styling, independent validated storage, and saved preference before visible paint. This overrides older required-overlay/light-only roadmap requirements. Record permitted static checks and fresh source review; no tests added/run, full automatic test gate NOT RUN, browser UI/manual section 15 pending. Prior packet/learning milestones below are historical.
 

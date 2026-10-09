@@ -4,9 +4,9 @@
 
 Build a complete local-first interactive application that teaches Apache Kafka by simulating behavior and visualizing state changes. It is a learning playground, not a Kafka administration dashboard and not a real Kafka client. The app must run without infrastructure today and remain ready for deployment later.
 
-## Current UI contract — tabbed beginner chart
+## Current UI contract — question-led Flow and Guide
 
-The opening route is a focused chart workspace with only Run/Pause and Reset workflow controls. Seven native bottom tabs project the same snapshot as Flow, Partitions, Consumers, Offsets & lag, Delivery, Replication, and Activity views. Chart nodes use stable bounded IDs, real snapshot metrics, deterministic layouts, and accessible hover/focus tooltips. The old Customize route, visible send/reference actions, execution strip, and floating inspector surfaces are removed. Guide experiments and internal deterministic fixtures may still use store actions; Guide, Practice, simulator state, learning progress, and HANZO footer branding remain available.
+Follow [FLOW_GUIDE_LEARNING_REDESIGN.md](FLOW_GUIDE_LEARNING_REDESIGN.md). Flow and Guide teach through a useful question, a prediction, actual simulator action, and visible evidence. Seven accessible perspectives still project the same snapshot, but the chart exposes the relationships and state needed to explain routing, ownership, processing failures, replay, and checkpoints without depending on every tooltip. An inline learning surface offers explicit bounded scenario actions and captured comparisons. Guide leads with active lesson choices and retains the original one-record exercise while removing repetitive introduction and decorative prose. The former Run/Reset-only toolbar and collapsed-only experiment rules are superseded by this request. `/customize` and INSPECT STEP remain removed; Practice, independent simulator/learning/theme state, and HANZO branding remain intact.
 
 ## Architecture
 
@@ -118,7 +118,7 @@ Offsets start at zero, increase monotonically, and are local to a partition. The
 - crash-before-commit can show duplicate processing;
 - commit-before-processing can show message loss;
 - events, lag, throughput, and bounded history come from real simulation state;
-- important objects have explanations and source concept mappings through chart tooltips and Guide learning surfaces.
+- important objects expose the causal state needed for the selected question in visible chart/learning content; chart tooltips provide optional detail and Guide retains source concept mappings.
 
 ### Event identity used by the flow projection
 
@@ -130,13 +130,13 @@ The delivery examples include **Duplicate processing** and **Commit too soon** (
 
 The app has the following routes with clear ownership:
 
-- `/` is the opening experience: an almost full-screen node-and-link process visualization with Run/Pause, Reset workflow, seven chart tabs, and hover/focus tooltips. It contains no forms, dense detail cards, long introduction, or metrics dashboard. Direct `/customize` visits return 404 because that route is removed.
-- `/guide` teaches the process in plain language and includes a guided send/read/save exercise. Starting this exercise explicitly resets the workflow and turns off automatic commits; reading does not produce new records. Its experiment actions remain internal to the learning surface and link back to the live chart on `/`.
+- `/` is the opening experience: a node-and-link learning visualization with seven accessible perspectives, visible causal labels and failure evidence, playback/reset controls, and explicit question-led scenario interactions. Its inline learning surface does not obscure the chart; long introductions and unrelated dashboard filler stay out. Direct `/customize` visits return 404 because that route is removed.
+- `/guide` teaches through active lesson choices, predictions, observed evidence, and a guided send/read/save exercise. Starting the original exercise explicitly resets the workflow and turns off automatic commits; reading does not produce new records. Shared experiment actions capture real state and link back to the current chart on `/`.
 - `/practice` is the category hub for interview practice. `/practice/easy`, `/practice/middle`, `/practice/hard`, `/practice/extreme-hard`, `/practice/most-common`, `/practice/trick`, and `/practice/situation` are separate quiz URLs backed by the shared quiz renderer. Each category contains exactly 50 multiple-choice questions with four options, one explanation, and saved progress.
 
 The routes share the same client-side Zustand simulation during in-app navigation. They must not create separate Kafka state models. Simulator and chart state, plus Practice progress, persist in versioned browser `localStorage` and hydrate only after the client mounts. A restored simulation is paused until the learner presses Run. A missing, invalid, unavailable, or over-quota store falls back to a deterministic initial state and shows a recoverable notice; it must not prevent the app from opening.
 
-The opening screen defaults to light warm-white surfaces with black/gray/red accents and can switch to whole-app charcoal/gray/red dark styling through the far-right shared-header theme toggle. The validated saved preference applies before visible paint. The canvas uses short labels; node tooltips and `/guide` supply explanations and technical vocabulary. Important state uses text labels in addition to color, and all routes respect keyboard/reduced motion. Detailed values shown in chart tooltips use explicit `unknown` or `unavailable` labels when the snapshot lacks data.
+The opening screen defaults to light warm-white surfaces with black/gray/red accents and can switch to whole-app charcoal/gray/red dark styling through the far-right shared-header theme toggle. The validated saved preference applies before visible paint. The canvas uses short labels and visible causal explanations; optional node tooltips and `/guide` provide further detail and technical vocabulary. Important state uses text labels in addition to color, and all routes respect keyboard/reduced motion. Values use explicit `unknown` or `unavailable` labels when the snapshot lacks data.
 
 ### Default compact reference workload
 
@@ -154,9 +154,9 @@ The compact card contract for each partition is:
 | Success / failed | Latest selected-group application outcomes; a commit is not counted as application success by itself |
 | C / P / LEO | Committed next offset, current read position, and log-end offset, respectively; each has an accessible full-text label/tooltip |
 
-Owner, leader, replication factor, `min.insync.replicas`, and ISR remain available as compact metadata and chart tooltips. Full record rows, payloads, timestamps, attempts, failure reasons, and replica details are represented by bounded snapshot values or explicit `unavailable` labels. The default graph has no detailed event table/bulky chart or INSPECT STEP overlay.
+Owner, leader, replication factor, `min.insync.replicas`, and ISR remain available as relevant visible metadata and optional chart detail. Record identity, attempts, failure reasons, and replica details come from bounded snapshot values or explicit `unavailable` labels. Detailed tables remain supplementary to the selected learning question; no INSPECT STEP overlay returns.
 
-The deterministic assignment is P0 → `consumer-0`, P1 → `consumer-1`, P2 → `consumer-2`, and P3 → `consumer-3`. The chart tabs expose aggregate values first and context-specific details on hover/focus. It is not a claim that the browser has contacted a broker. `Reset workflow` continues to return to the empty three-partition learning state used by the Guide; the internal reference fixture remains available to Guide experiments and tests but has no visible main-page load action.
+The deterministic assignment is P0 → `consumer-0`, P1 → `consumer-1`, P2 → `consumer-2`, and P3 → `consumer-3`. Chart perspectives expose the visible values and relationships needed to answer their question, with optional hover/focus detail. The graph does not claim that the browser has contacted a broker. `Reset workflow` continues to return to the empty three-partition learning state used by the Guide; explicit lesson Run actions may reuse the reference fixture without changing persisted state merely on hydration.
 
 The first explicit Guide sample still uses business-shaped key `order-7F3K9` and value `order-created`, and the Guide exercise keeps its one-record behavior. These nonsequential IDs are display fixtures, not generated offsets.
 
@@ -164,11 +164,11 @@ Example cards expose **How to try it** with Goal, Action, Look for, and Why. The
 
 ### Guide learning layers
 
-The existing send/read/save exercise is the first visible learning layer and its behavior is stable: starting it resets the workflow, produces one sample, disables automatic commit, reading pauses after the sample, and saving advances the committed position. Additional interview material is progressively disclosed below or beside that exercise. All interview sections are collapsed on first visit, use native keyboard accessible disclosure controls, and do not mutate simulator state. The material includes concise Kafka concept explanations, common interview questions with answers, and situation based diagnosis prompts. Longer explanations belong in these disclosures and chart tooltips, not in the opening canvas.
+Guide begins with usable learning choices and an active prediction/evidence cycle. The existing send/read/save exercise remains available and its behavior is stable: starting it resets the workflow, produces one sample, disables automatic commit, reading pauses after the sample, and saving advances the committed position. Concise concepts, interview questions, and source boundaries remain in native keyboard-accessible reference disclosures. Reading them does not mutate simulator state. Repetitive hero/journey/basics prose and generic closing invitations are removed.
 
 ### Guided experiments
 
-Below the stable one-record Guide exercise, five collapsed, keyboard-accessible experiments require a prediction before an explicit Run action, then show actual captured before/after simulator evidence, an explanation, and an interview follow-up. Their scope is keyed ordering, successful processing before an uncommitted replay, commit-before-processing skips, worker scaling with a hot partition, and failure/retry/manual commit. The exact fixture, state evidence, local progress persistence, and teaching boundaries are defined in [LEARNING_EXPERIMENTS.md](LEARNING_EXPERIMENTS.md). Opening a disclosure or selecting a prediction does not mutate state. Each Run has a visible workflow replacement notice and uses existing simulator actions; the failure lesson keeps manual commit as a separate learner action and guards it against a changed group, owner, read position, attempt, or workflow. Comparison tables retain readable columns at a `540px` minimum width inside a labelled keyboard-focusable local scroll container, with a mobile swipe hint and no page-level horizontal overflow. Learning progress persists in independent `kafkalab:learning:v1` storage, separately from simulator and Practice resets, and does not claim mastery or replay an experiment on reload. Links say **Inspect current Flow** because results are captured evidence and the live workflow can subsequently change.
+Five keyboard-accessible experiments require a prediction before an explicit Run action, then show actual captured before/after simulator evidence, an explanation, and a useful follow-up. Flow and Guide reuse their stable IDs and runner. Their scope is keyed ordering, successful processing before an uncommitted replay, commit-before-processing skips, worker scaling with a hot partition, and failure/retry/manual commit. The exact fixture, state evidence, local progress persistence, and teaching boundaries are defined in [LEARNING_EXPERIMENTS.md](LEARNING_EXPERIMENTS.md). Selecting a lesson or prediction does not mutate state. Each Run has a visible workflow replacement notice and uses existing simulator actions; the failure lesson keeps manual commit as a separate learner action and guards it against a changed group, owner, read position, attempt, or workflow. Visible metric changes and paths provide essential evidence; optional exact tables retain readable columns inside a labelled keyboard-focusable local scroll container without page-level horizontal overflow. Learning progress persists in independent `kafkalab:learning:v1` storage, separately from simulator and Practice resets, and does not claim mastery or replay an experiment on reload. Flow links refer to the current workflow because results are captured evidence and live state can subsequently change.
 
 ### Practice quiz contract
 
@@ -183,13 +183,13 @@ The opening `/` canvas stays visual and concise. It must not show the `MESSAGE F
 The primary learner surface is a live node-and-link process canvas, inspired by workflow editors such as n8n:
 
 ```text
-Producers → Topic → Partitions → Consumer Group → Consumers → Commit
+Producer/key routing → Partition log → Assigned consumer → Application outcome → Group checkpoint
 ```
 
 - Graph nodes and edges are projections of simulation state, not a second Kafka model.
 - Stable IDs identify each actual producer (`checkout-api`, `payment-service`, `shipping-service`), the topic, partitions, consumers, commit step, and relationships. Producer nodes show counts and activity derived from their actual `Producer` state and source event metadata; they must not be decorative duplicates. A newly produced record's local provenance can be inspected from its source producer; an older record without `producerId` remains explicitly unknown. The selected group is represented through consumer labels, assignments, and inspector details; it does not require a separate node.
 - The canvas supports pan, zoom, fit view, minimap, node movement, keyboard focus, and normal graph selection.
-- Node/edge selection never opens StepInspector or a replacement overlay. Its accessible labels remain useful; longer explanations remain on Guide and node tooltips. Overlay close/Escape/focus-restoration requirements are retired.
+- Node/edge selection never opens StepInspector or a replacement overlay. Its accessible labels remain useful; visible inline learning content explains causal state while optional tooltips and Guide reference disclosures supply more detail. Overlay close/Escape/focus-restoration requirements are retired.
 - Advanced overlays can represent brokers, replicas/ISR, transactions, schemas, Streams, and dead-letter concepts.
 - The graph stays bounded: chart nodes show aggregate counts and bounded category/event summaries. Records never become one graph node per message. The default canvas has no detailed event table, payload/timestamp/error columns, or step overlay.
 - Individual records appear as bounded moving tokens over the real relationship edges. A token is a visual projection of one `KafkaMessage.id`; it is never a React Flow node and never changes simulation state. At most 24 tokens may be visible at once. When more records arrive, the newest 24 active transits are shown while the complete event/history state remains available in the timeline and inspectors.

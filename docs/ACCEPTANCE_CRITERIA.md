@@ -1,6 +1,22 @@
 # Acceptance Criteria
 
-## Current slice: theme toggle and step-dialog removal
+## Current slice: Flow and Guide learning redesign
+
+The 2026-10-09 request supersedes the Run/Reset-only toolbar, tooltips-as-primary-teaching, and collapsed-only experiment requirements below. The bounded contract is [FLOW_GUIDE_LEARNING_REDESIGN.md](FLOW_GUIDE_LEARNING_REDESIGN.md); earlier theme/chart/learning check results are historical.
+
+- [ ] Flow provides a useful question, meaningful node/relationship variants, visible causal labels, and enough evidence to understand its main result without hovering each node. Tooltips retain optional detail.
+- [ ] Flow defaults to a relevant partition path, permits selecting another actual partition, and exposes the whole system only through an explicit comparison action. Group-wide Delivery and simulator-wide Activity remain available where relevant.
+- [ ] Failure/delivery content pinpoints actual failed or skipped work, relevant partition/consumer/attempt/reason, and clearly separates reading, application success, and group checkpoint progress.
+- [ ] Seven keyboard-accessible chart perspectives project the shared snapshot through stable bounded nodes, independently saved whole-system layouts, and temporary canonical focus layouts. No individual-message graph nodes or invented downstream integrations are introduced.
+- [ ] Both Flow and Guide reuse the five existing experiment fixtures, stable IDs, and runner. Prediction/lesson selection alone does not mutate the simulator; explicit Run displays a workflow replacement notice and captures actual evidence.
+- [ ] The Guide leads with active lesson choices and a prediction/evidence cycle. The original one-record Send example / Read record / Save progress semantics remain available; repetitive hero/journey/basics copy and generic closing invitations are removed.
+- [ ] Retry retains stored record identity and changes the actual attempt/outcome. A separate eligible manual commit advances the checkpoint; stale workflow/group/owner/attempt/read state disables that action.
+- [ ] Longer reference concepts and sources remain accessible through concise disclosures. Captured results are labelled separately from current Flow state, and participation is not presented as mastery.
+- [ ] Practice, `/customize` removal, INSPECT STEP removal, theme preference, and independent simulator/Practice/learning resets and persistence remain intact.
+- [ ] Desktop and 320px/390px views support keyboard, readable light/dark state labels, and reduced motion without relying on animation or page-level horizontal overflow. Local comparison scrolling is labelled and keyboard reachable.
+- [ ] Current typecheck, lint, relevant meaningful tests, build, fresh independent review, and browser/manual evidence are recorded. Historical test restrictions do not apply to this new substantial slice. Manual acceptance follows section 17 of [MANUAL_TEST_CHECKLIST.md](MANUAL_TEST_CHECKLIST.md).
+
+## Historical slice: theme toggle and step-dialog removal
 
 These criteria supersede earlier requirements for the selected node/link INSPECT STEP overlay and a light-only interface. Detailed normal Customize Activity panels remain in scope.
 

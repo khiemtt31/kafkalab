@@ -175,3 +175,17 @@ As a learner, I can use Flow and Customize without the INSPECT STEP dialog openi
 ## US-44 Keep my preferred light or dark theme
 
 As a learner, I can use the far-right header toggle to choose a readable light or dark appearance across every route, keep that preference on reload without a theme flash, and change it without losing records, playback, Practice answers, or learning progress.
+
+## US-45 Learn from a question and its evidence
+
+As a learner, I can choose a concrete Kafka question in Flow or Guide, predict the result, run an explicit small experiment, and compare actual evidence instead of relying on tooltips and a long introduction. Choosing the question or prediction alone keeps my simulator unchanged; Run explains that it replaces the workflow.
+
+## US-46 Pinpoint why a flow fails or surprises me
+
+As a learner, I can see the affected partition, consumer, application outcome, attempt/reason, and group checkpoint directly in the relevant chart perspective. I can explain why successful work replays, premature saving skips work, extra workers stay idle, or retry still needs a separate commit, with enough system context to trace the cause.
+
+## US-47 Keep the useful learning paths
+
+As a learner, I can still complete the first send/read/save exercise, explore the five existing scenarios, and use Practice with saved progress. Flow and Guide share the same simulator and concise reference material, while redundant introduction, decorative prose, and the retired floating inspector stay out of my way.
+
+These stories use [FLOW_GUIDE_LEARNING_REDESIGN.md](FLOW_GUIDE_LEARNING_REDESIGN.md) and supersede older passive-tooltip, Run/Reset-only, or collapsed-only requirements where they conflict. They retain the removed Customize route and independent theme/reset/persistence decisions.

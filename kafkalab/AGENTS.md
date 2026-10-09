@@ -22,7 +22,7 @@ For a relevant change, `improvement-qa.bot` is mandatory. It checks documentatio
 
 ## Completion behavior
 
-Every implementation agent follows the current higher-priority verification scope. Run `../.agents/scripts/run-done-gate.sh .` only when its included test execution is authorized. For the current theme/dialog-removal slice, tests were not explicitly requested and must not be added/run; record the full automatic test gate as NOT RUN and use the permitted static typecheck/lint/build plus fresh source review. Prior test/browser evidence does not certify a new slice. Shared project docs and `.agents/` live one directory above this app; report exact results and manual verification limits.
+Every implementation agent follows the current higher-priority verification scope. The Flow/Guide learning redesign requires meaningful relevant tests, typecheck, lint, build, and fresh review under `../docs/FLOW_GUIDE_LEARNING_REDESIGN.md`. Earlier theme/dialog-removal test restrictions applied only to that historical slice. Prior test/browser evidence does not certify a new slice. Shared project docs and `.agents/` live one directory above this app; report exact results and manual verification limits.
 
 The orchestrator inspects the diff and reruns the relevant checks after each agent handoff. A fresh reviewer is required before `READY_FOR_MANUAL_TEST`.
 
@@ -30,7 +30,7 @@ The orchestrator inspects the diff and reruns the relevant checks after each age
 
 This is a complete local-first learning app. Core and advanced educational Kafka concepts are required product behavior. The runtime simulates Kafka behavior in the browser and intentionally does not require a backend, database, real Kafka broker, Kafka client library, Docker, authentication, server actions, Redis, or remote persistence. Versioned browser `localStorage` is required for simulator/chart state and Practice progress; it must be validated and recoverable. Deployment can be added later without changing the learning model. Do not add a dependency when React, CSS, SVG, or existing dependencies can solve the problem.
 
-The route contract follows the current chart simplification: `/` is the focused visual process-flow canvas with only Run/Pause and Reset workflow controls, seven bottom chart tabs, accessible hover/focus tooltips, and no Customize navigation. `/customize` is removed, including its route and dedicated UI components; direct visits return 404. `/guide` retains the beginner lesson, five causal experiments, and interview layers; `/practice` retains its hub and seven quizzes. Preserve domain state, quiz/learning progress, accessibility, and reduced motion. No forms, dense metrics strips, or configuration wall belong on `/`.
+The current route contract follows `../docs/FLOW_GUIDE_LEARNING_REDESIGN.md`: `/` combines a focused real partition path, seven accessible chart perspectives, visible failure evidence, Run/Pause and Reset, and an inline prediction/run/evidence challenge. Essential learning stays visible; optional node details open deliberately. `/customize` is removed, including its route and dedicated UI components; direct visits return 404. `/guide` leads with one active causal experiment and retains the beginner send/read/save exercise and optional interview reference; `/practice` retains its hub and seven quizzes. Preserve domain state, quiz/learning progress, accessibility, and reduced motion. Long introductions, unrelated metrics strips, configuration walls, and floating inspectors stay out of Flow.
 
 ## Manual testing
 
