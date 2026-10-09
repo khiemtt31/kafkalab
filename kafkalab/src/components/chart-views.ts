@@ -1,11 +1,11 @@
 import type { Edge, Node, XYPosition } from "@xyflow/react";
 import type { KafkaLabSnapshot } from "../hooks/useKafkaLab";
 import type { LabIconName } from "./LabIcon";
-import { compactFlowPositions, projectPartitionSummary, recordState } from "./flow-projection";
+import { projectPartitionSummary, recordState } from "./flow-projection";
 import { CHART_ACTIVITY_CATEGORIES } from "./chart-activity";
 
 export const CHART_VARIANTS = [
-  { id: "flow", label: "Flow", description: "Follow the path from producer to topic, partition, consumer, and checkpoint." },
+  { id: "flow", label: "Flow", description: "Follow a record into application work, then separate its outcome from the saved checkpoint." },
   { id: "partitions", label: "Partitions", description: "Compare each partition's owner, backlog, outcomes, and local offsets." },
   { id: "consumers", label: "Consumers", description: "See how the selected consumer group owns partitions and processes work." },
   { id: "offsets", label: "Offsets & lag", description: "Read committed, current, and log-end positions as separate Kafka concepts." },
@@ -36,12 +36,16 @@ export type ChartNodeData = {
   status: string;
   state: FlowState;
   icon: LabIconName;
+  lesson?: string;
+  problem?: string;
   inline?: ChartInlineRow[];
   tooltip: ChartNodeTooltip;
 };
 
 export type ChartNode = Node<ChartNodeData, "chart">;
-export type ChartEdge = Edge<{ label: string }, "kl-flow">;
+export type ChartEdge = Edge<{ label: string; relationship: "record" | "learning" | "checkpoint" }, "kl-flow">;
+
+export type ChartFocus = { focused?: boolean; focusPartitionId?: number };
 
 export type ChartProjection = {
   variant: ChartVariantId;
@@ -131,20 +135,21 @@ function partitionTooltip(snapshot: KafkaLabSnapshot, details: PartitionView, su
 }
 
 function node(id: string, position: XYPosition, data: ChartNodeData): ChartNode {
+  const lesson = data.lesson ?? data.tooltip.summary;
   return {
     id,
     type: "chart",
     position,
-    data,
-    ariaLabel: `${data.eyebrow.toLowerCase()} ${data.title}. ${data.status}. ${data.metric}. ${data.tooltip.summary}`,
+    data: { ...data, lesson },
+    ariaLabel: `${data.eyebrow.toLowerCase()} ${data.title}. ${data.status}. ${data.metric}. ${lesson}${data.problem ? ` ${data.problem}` : ""}`,
   };
 }
 
-function edge(id: string, source: string, target: string, label: string): ChartEdge {
-  return { id, type: "kl-flow", source, target, data: { label } };
+function edge(id: string, source: string, target: string, label: string, relationship: "record" | "learning" | "checkpoint" = "learning", handles?: { sourceHandle?: string; targetHandle?: string }): ChartEdge {
+  return { id, type: "kl-flow", source, target, ...handles, data: { label, relationship } };
 }
 
-function stack(ids: string[], x: number, startY = 80, gap = 150): Record<string, XYPosition> {
+function stack(ids: string[], x: number, startY = 80, gap = 210): Record<string, XYPosition> {
   return Object.fromEntries(ids.map((id, index) => [id, { x, y: startY + index * gap }]));
 }
 
@@ -164,6 +169,7 @@ function producerNode(snapshot: KafkaLabSnapshot, producerId: string, position: 
     metric: `${count} records`,
     status: active ? "publishing" : count ? "has produced" : "waiting",
     state: active ? "active" : count ? "attention" : "idle",
+    lesson: "Send a keyed record; Kafka stores it in one partition.",
     inline: [{ label: "acks", value: cluster?.requiredAcks ?? "—" }],
     tooltip: {
       title: producerId,
@@ -220,6 +226,7 @@ function partitionNode(snapshot: KafkaLabSnapshot, details: PartitionView, posit
     metric: `${details.orders} orders · ${details.records} records`,
     status: details.owner,
     state: failed || details.lag > 0 ? "attention" : "idle",
+    lesson: "Records stay ordered here, even after reading and committing.",
     inline: variant === "offsets"
       ? [{ label: "C", value: String(details.committed) }, { label: "P", value: String(details.current) }, { label: "LEO", value: String(details.leo) }, { label: "lag", value: String(details.lag), tone: details.lag ? "accent" : undefined }]
       : [{ label: "unread", value: String(details.unread) }, { label: "in flight", value: String(details.inFlight) }, { label: "failed", value: String(details.failed), tone: failed ? "failure" : undefined }],
@@ -245,6 +252,7 @@ function consumerNode(snapshot: KafkaLabSnapshot, consumerId: string, position: 
     metric: assigned.length ? `${assigned.length} partitions` : "idle",
     status,
     state: failed || consumer?.status === "dead" ? "attention" : "idle",
+    lesson: status === "crashed" ? "A crash can hand this partition to another group member." : "The group gives this partition to one active owner at a time.",
     inline: [{ label: "in flight", value: String(inFlight) }, { label: "done", value: String(succeeded) }, { label: "failed", value: String(failed), tone: failed ? "failure" : undefined }],
     tooltip: {
       title: consumer?.name ?? consumerId,
@@ -277,6 +285,7 @@ function commitNode(snapshot: KafkaLabSnapshot, position: XYPosition): ChartNode
     metric: group ? `${Object.keys(group.committedOffsets).length} positions` : "waiting",
     status: "records stay in the log",
     state: snapshot.totalLag ? "attention" : "idle",
+    lesson: "Save the next offset to resume from; this does not prove work succeeded.",
     inline: [{ label: "saved", value: checkpoints || "—" }],
     tooltip: {
       title: "Checkpoint",
@@ -292,30 +301,94 @@ function commitNode(snapshot: KafkaLabSnapshot, position: XYPosition): ChartNode
   });
 }
 
-function flowProjection(snapshot: KafkaLabSnapshot): ChartProjection {
+function flowProjection(snapshot: KafkaLabSnapshot, focus: ChartFocus): ChartProjection {
   const group = groupFor(snapshot);
-  const producerList = producerIds(snapshot);
-  const producerPosition = compactFlowPositions(producerList.map((producer) => producer.id), snapshot.partitions.map((partition) => partition.id), group?.consumers.map((consumer) => consumer.id) ?? []).producer;
-  const positions = compactFlowPositions(producerList.map((producer) => producer.id), snapshot.partitions.map((partition) => partition.id), group?.consumers.map((consumer) => consumer.id) ?? []);
-  const nodes = producerList.map((producer) => producerNode(snapshot, producer.id, positions[`producer-${producer.id}`] ?? producerPosition ?? { x: 0, y: 120 })) as ChartNode[];
-  nodes.push(topicNode(snapshot, positions.topic ?? { x: 250, y: 220 }));
-  snapshot.partitions.forEach((partition) => nodes.push(partitionNode(snapshot, partitionView(snapshot, partition.id), positions[`partition-${partition.id}`] ?? { x: 500, y: 120 }, "flow")));
-  (group?.consumers ?? []).forEach((consumer) => nodes.push(consumerNode(snapshot, consumer.id, positions[`consumer-${consumer.id}`] ?? { x: 850, y: 120 })));
-  nodes.push(commitNode(snapshot, positions.commit ?? { x: 1150, y: 220 }));
-  const edges: ChartEdge[] = [];
-  producerList.forEach((producer) => edges.push(edge(`producer-${producer.id}-topic`, `producer-${producer.id}`, "topic", "send")));
-  snapshot.partitions.forEach((partition) => {
-    edges.push(edge(`topic-partition-${partition.id}`, "topic", `partition-${partition.id}`, "route"));
+  const selectedPartition = focus.focused ? snapshot.partitions.find((partition) => partition.id === focus.focusPartitionId) ?? snapshot.partitions[0] : undefined;
+  const partitions = selectedPartition ? [selectedPartition] : snapshot.partitions;
+  const focusRecord = selectedPartition?.messages.find((message) => message.delivery?.applicationStatus === "failed")
+    ?? selectedPartition?.messages.find((message) => recordState(message, selectedPartition.committedOffset ?? 0) === "skipped")
+    ?? selectedPartition?.messages.findLast((message) => (message.delivery?.attempt ?? 0) > 1)
+    ?? selectedPartition?.messages.at(-1);
+  const allProducers = producerIds(snapshot);
+  const producerList = selectedPartition ? focusRecord ? allProducers.filter((producer) => producer.id === focusRecord.producerId) : allProducers.slice(0, 1) : allProducers;
+  const consumers = selectedPartition ? (group?.consumers ?? []).filter((consumer) => consumer.id === group?.assignments[selectedPartition.id]) : group?.consumers ?? [];
+  const rowGap = 490;
+  const positions: Record<string, XYPosition> = {
+    topic: { x: selectedPartition ? 250 : 310, y: 40 },
+    commit: selectedPartition ? { x: 0, y: 290 } : { x: 1660, y: 60 },
+    ...stack(producerList.map((producer) => `producer-${producer.id}`), 0, 40, 200),
+    ...stack(partitions.map((partition) => `partition-${partition.id}`), selectedPartition ? 500 : 620, 40, rowGap),
+    ...stack(consumers.map((consumer) => `consumer-${consumer.id}`), selectedPartition ? 770 : 960, 40, rowGap),
+  };
+  const nodes = producerList.map((producer) => producerNode(snapshot, producer.id, positions[`producer-${producer.id}`]));
+  if (focusRecord && !producerList.length) nodes.push(node("origin-unavailable", { x: 0, y: 40 }, {
+    kind: "producer", icon: "send", eyebrow: "RECORD ORIGIN", title: focusRecord.producerId ?? "Unknown producer", metric: "saved-record source", status: focusRecord.producerId ? "outside the current producer list" : "origin was not recorded", state: "idle",
+    lesson: "This saved record does not identify a current producer.",
+    tooltip: { title: "Saved record origin", eyebrow: "RECORD ORIGIN", summary: "Older saved records may not include producer provenance; no current producer is inferred from the record.", rows: [{ label: "Recorded producer", value: focusRecord.producerId ?? "unavailable" }, { label: "Record", value: focusRecord.id }] },
+  }));
+  const routing = topicNode(snapshot, positions.topic);
+  const latest = focusRecord ?? partitions.flatMap((partition) => partition.messages).reduce<KafkaLabSnapshot["partitions"][number]["messages"][number] | undefined>((last, message) => !last || message.timestamp >= last.timestamp ? message : last, undefined);
+  nodes.push(node("topic", positions.topic, { ...routing.data, eyebrow: "KEY ROUTING", status: "choose one partition", lesson: "The same key follows the same partition while the partition count and partitioner stay fixed.", inline: latest ? [{ label: "key", value: latest.key ?? "no key" }, { label: "lands in", value: `P${latest.partition}` }] : [{ label: "topic", value: snapshot.topicName || "orders" }] }));
+  const checkpoint = commitNode(snapshot, positions.commit);
+  if (selectedPartition) {
+    const details = partitionView(snapshot, selectedPartition.id);
+    checkpoint.data = { ...checkpoint.data, metric: `P${details.partitionId} next offset ${details.committed}`, status: `${details.lag} records behind log end`, inline: [{ label: "read", value: String(details.current) }, { label: "saved", value: String(details.committed) }, { label: "end", value: String(details.leo) }] };
+  }
+  nodes.push(node("commit", positions.commit, checkpoint.data));
+  consumers.forEach((consumer) => nodes.push(consumerNode(snapshot, consumer.id, positions[`consumer-${consumer.id}`])));
+  const edges: ChartEdge[] = producerList.map((producer) => edge(`producer-${producer.id}-topic`, `producer-${producer.id}`, "topic", "send record", "record"));
+  if (focusRecord && !producerList.length) edges.push(edge("origin-unavailable-topic", "origin-unavailable", "topic", "saved-record origin"));
+  partitions.forEach((partition, index) => {
+    const details = partitionView(snapshot, partition.id);
     const owner = group?.assignments[partition.id];
-    if (owner) edges.push(edge(`partition-consumer-${partition.id}-${owner}`, `partition-${partition.id}`, `consumer-${owner}`, "read"));
+    const y = 40 + index * rowGap;
+    const handlerId = `handler-${partition.id}`;
+    const successId = `outcome-success-${partition.id}`;
+    const failureId = `outcome-failure-${partition.id}`;
+    const failed = partition.messages.find((message) => message.delivery?.applicationStatus === "failed");
+    const skipped = partition.messages.find((message) => recordState(message, details.committed) === "skipped");
+    const successes = partition.messages.filter((message) => message.delivery?.applicationStatus === "succeeded").length;
+    const retried = partition.messages.findLast((message) => (message.delivery?.attempt ?? 0) > 1);
+    nodes.push(partitionNode(snapshot, details, positions[`partition-${partition.id}`], "flow"));
+    const handlerPosition = selectedPartition ? { x: 770, y: 290 } : { x: 1300, y };
+    const successPosition = selectedPartition ? { x: 500, y: 290 } : { x: 1660, y: y + 190 };
+    const failurePosition = selectedPartition ? { x: 250, y: 290 } : { x: 1300, y: y + 230 };
+    nodes.push(node(handlerId, handlerPosition, {
+      kind: "handler", icon: "worker", eyebrow: "APPLICATION WORK", title: "Process the record", metric: `${details.inFlight} in flight`, status: failed ? `P${partition.id} has a failed attempt` : skipped ? "checkpoint passed unfinished work" : owner ? "runs after reading" : "waiting for an owner", state: failed || skipped ? "attention" : "idle",
+      lesson: "Reading moves the cursor; your application still has to complete the work.",
+      tooltip: { title: `P${partition.id} application handler`, eyebrow: "APPLICATION WORK", summary: "This is a learning step inside the consumer application, not another Kafka service.", rows: [{ label: "Partition", value: `P${partition.id}` }, { label: "In flight", value: String(details.inFlight) }, { label: "Succeeded", value: String(successes) }, { label: "Failed", value: String(details.failed) }], note: "These counts use the selected group's latest attempts; Kafka cannot infer external business outcomes from a committed offset." },
+    }));
+    nodes.push(node(successId, successPosition, {
+      kind: "outcome", icon: "check", eyebrow: "WORK OUTCOME", title: "Work succeeded", metric: `${successes} records`, status: retried?.delivery?.applicationStatus === "succeeded" ? `retry attempt ${retried.delivery.attempt} succeeded` : "application outcome", state: "idle",
+      lesson: "Successful work and a saved checkpoint are separate events.",
+      tooltip: { title: `P${partition.id} successful work`, eyebrow: "WORK OUTCOME", summary: "The application reported success for these latest selected-group attempts.", rows: [{ label: "Succeeded", value: String(successes) }, { label: "Checkpoint", value: String(details.committed) }, { label: "Current read position", value: String(details.current) }] },
+    }));
+    nodes.push(node(failureId, failurePosition, {
+      kind: "failure", icon: "activity", eyebrow: "FAILURE / RETRY", title: failed ? "Work failed here" : skipped ? "Work was skipped" : "Retry the same record", metric: failed ? `P${partition.id} offset ${failed.offset} · attempt ${failed.delivery?.attempt ?? 1}` : skipped ? `P${partition.id} offset ${skipped.offset} · skipped` : `${details.failed} unresolved failures`, status: failed ? "checkpoint can stay behind" : skipped ? "checkpoint advanced before success" : "available when work fails", state: failed || skipped ? "attention" : "idle",
+      lesson: skipped && !failed ? "Restart resumes at the saved checkpoint, past this unfinished record." : "Retry repeats application work on the same stored record.",
+      problem: failed ? failed.delivery?.failureReason ?? "Application processing failed." : skipped ? `Saved offset ${details.committed} has passed offset ${skipped.offset} without successful work.` : undefined,
+      tooltip: { title: `P${partition.id} failure and retry`, eyebrow: "FAILURE / RETRY", summary: skipped && !failed ? "This group advanced its checkpoint past unfinished application work. The record stays in the topic, but normal restart reading begins after it." : "A failed application attempt leaves the topic record available; a retry adds an attempt without appending a new record.", rows: [{ label: "Failed latest attempts", value: String(details.failed) }, { label: "Skipped", value: String(details.skipped) }, { label: "Record", value: failed?.id ?? skipped?.id ?? "no unresolved failure" }, { label: "Reason", value: failed?.delivery?.failureReason ?? "none" }, { label: "Saved checkpoint", value: String(details.committed) }] },
+    }));
+    edges.push(edge(`topic-partition-${partition.id}`, "topic", `partition-${partition.id}`, "append to log", "record"));
+    if (owner) {
+      edges.push(edge(`partition-consumer-${partition.id}-${owner}`, `partition-${partition.id}`, `consumer-${owner}`, "read record", "record"));
+      edges.push(edge(`consumer-handler-${partition.id}`, `consumer-${owner}`, handlerId, "application handles it", "learning", selectedPartition ? { sourceHandle: "output-bottom", targetHandle: "input-top" } : undefined));
+    } else {
+      const missingOwnerId = `owner-unassigned-${partition.id}`;
+      nodes.push(node(missingOwnerId, { x: selectedPartition ? 770 : 960, y }, { kind: "consumer", icon: "worker", eyebrow: "PARTITION OWNER", title: "No active owner", metric: `P${partition.id}`, status: "reading cannot advance", state: "attention", lesson: "The group needs an active owner before this partition can be read.", tooltip: { title: `P${partition.id} has no owner`, eyebrow: "PARTITION OWNER", summary: "The selected group currently has no consumer assigned to this partition.", rows: [{ label: "Group", value: group?.name ?? snapshot.selectedGroupId }, { label: "Unread", value: String(details.unread) }] } }));
+      edges.push(edge(`partition-unassigned-${partition.id}`, `partition-${partition.id}`, missingOwnerId, "needs an owner"));
+    }
+    edges.push(edge(`handler-success-${partition.id}`, handlerId, successId, "work succeeds", "learning", selectedPartition ? { sourceHandle: "output-left", targetHandle: "input-right" } : undefined));
+    edges.push(edge(`handler-failure-${partition.id}`, handlerId, failureId, skipped && !failed ? "checkpoint passed work" : "work fails", "learning", { sourceHandle: "output-bottom", targetHandle: selectedPartition ? "input-bottom" : "input-top" }));
+    if (!skipped || failed) edges.push(edge(`failure-handler-${partition.id}`, failureId, handlerId, "retry same record", "learning", selectedPartition ? { sourceHandle: "output-bottom", targetHandle: "input-bottom" } : undefined));
   });
-  (group?.consumers ?? []).forEach((consumer) => edges.push(edge(`consumer-commit-${consumer.id}`, `consumer-${consumer.id}`, "commit", "save")));
-  return { variant: "flow", label: "Flow", description: CHART_VARIANTS[0].description, nodes, edges, focusNodeId: snapshot.partitions[0] ? "partition-0" : "topic", ariaLabel: "Kafka producer to topic, partition, consumer, and checkpoint flow" };
+  consumers.forEach((consumer) => edges.push(edge(`consumer-commit-${consumer.id}`, `consumer-${consumer.id}`, "commit", "save next offset", "checkpoint", selectedPartition ? { sourceHandle: "output-bottom", targetHandle: "input-top" } : undefined)));
+  return { variant: "flow", label: "Flow", description: CHART_VARIANTS[0].description, nodes, edges, focusNodeId: partitions[0] ? `partition-${partitions[0].id}` : "topic", ariaLabel: selectedPartition ? `Kafka P${selectedPartition.id} record, application outcome, and checkpoint learning path` : "Kafka record paths, application outcomes, and separate group checkpoints" };
 }
 
 function partitionsProjection(snapshot: KafkaLabSnapshot): ChartProjection {
   const group = groupFor(snapshot);
-  const positions: Record<string, XYPosition> = { topic: { x: 40, y: 190 }, ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 420, 50, 150), ...stack((group?.consumers ?? []).map((consumer) => `consumer-${consumer.id}`), 880, 85, 150) };
+  const positions: Record<string, XYPosition> = { topic: { x: 40, y: 190 }, ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 420, 50, 210), ...stack((group?.consumers ?? []).map((consumer) => `consumer-${consumer.id}`), 880, 85, 210) };
   const nodes: ChartNode[] = [topicNode(snapshot, positions.topic)];
   snapshot.partitions.forEach((partition) => nodes.push(partitionNode(snapshot, partitionView(snapshot, partition.id), positions[`partition-${partition.id}`], "partitions")));
   (group?.consumers ?? []).forEach((consumer) => nodes.push(consumerNode(snapshot, consumer.id, positions[`consumer-${consumer.id}`])));
@@ -328,7 +401,7 @@ function partitionsProjection(snapshot: KafkaLabSnapshot): ChartProjection {
 
 function consumersProjection(snapshot: KafkaLabSnapshot): ChartProjection {
   const group = groupFor(snapshot);
-  const positions: Record<string, XYPosition> = { group: { x: 40, y: 190 }, ...stack((group?.consumers ?? []).map((consumer) => `consumer-${consumer.id}`), 410, 70, 150), ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 850, 50, 150) };
+  const positions: Record<string, XYPosition> = { group: { x: 40, y: 190 }, ...stack((group?.consumers ?? []).map((consumer) => `consumer-${consumer.id}`), 410, 70, 210), ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 850, 50, 210) };
   const groupNode = node("group", positions.group, {
     kind: "group", icon: "worker", eyebrow: "CONSUMER GROUP", title: group?.name ?? snapshot.selectedGroupId, metric: `${group?.consumers.length ?? 0} consumers`, status: `${snapshot.totalLag} commit lag`, state: snapshot.totalLag ? "attention" : "idle",
     tooltip: { title: group?.name ?? snapshot.selectedGroupId, eyebrow: "CONSUMER GROUP", summary: "A group shares partition ownership while maintaining its own checkpoints.", rows: [{ label: "Consumers", value: String(group?.consumers.length ?? 0) }, { label: "Partitions", value: String(snapshot.partitions.length) }, { label: "Commit lag", value: String(snapshot.totalLag) }] },
@@ -353,7 +426,7 @@ function offsetsProjection(snapshot: KafkaLabSnapshot): ChartProjection {
   }));
   snapshot.partitions.forEach((partition, index) => {
     const details = partitionView(snapshot, partition.id);
-    const y = 55 + index * 190;
+    const y = 55 + index * 520;
     const partitionId = `partition-${partition.id}`;
     nodes.push(partitionNode(snapshot, details, { x: 350, y }, "offsets"));
     const metrics = [
@@ -363,7 +436,7 @@ function offsetsProjection(snapshot: KafkaLabSnapshot): ChartProjection {
     ] as const;
     metrics.forEach(([id, label, value, meaning], metricIndex) => {
       const metricId = `offset-${id}-${partition.id}`;
-      nodes.push(node(metricId, { x: 770, y: y - 28 + metricIndex * 58 }, {
+      nodes.push(node(metricId, { x: 770, y: y - 28 + metricIndex * 165 }, {
         kind: "offset", icon: "activity", eyebrow: label, title: `P${partition.id} ${label}`, metric: String(value), status: meaning, state: label === "LEO" || value !== details.committed ? "attention" : "idle",
         tooltip: { title: `P${partition.id} ${label}`, eyebrow: label, summary: meaning, rows: [{ label: "Partition", value: `P${partition.id}` }, { label: label, value: String(value) }, { label: "Commit lag", value: String(details.lag) }] },
       }));
@@ -409,7 +482,7 @@ function replicationProjection(snapshot: KafkaLabSnapshot): ChartProjection {
     return { variant: "replication", label: "Replication", description: CHART_VARIANTS[5].description, nodes, edges: [edge("replication-unavailable-edge", "topic", "replication-unavailable", "health")], focusNodeId: "replication-unavailable", ariaLabel: "Kafka replication chart without broker data" };
   }
   const brokerIds = cluster.brokers.map((broker) => broker.id);
-  const positions: Record<string, XYPosition> = { topic: { x: 20, y: 190 }, ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 370, 50, 150), ...stack(brokerIds.map((id) => `broker-${id}`), 850, 100, 180) };
+  const positions: Record<string, XYPosition> = { topic: { x: 20, y: 190 }, ...stack(snapshot.partitions.map((partition) => `partition-${partition.id}`), 370, 50, 210), ...stack(brokerIds.map((id) => `broker-${id}`), 850, 100, 230) };
   const nodes: ChartNode[] = [topicNode(snapshot, positions.topic)];
   snapshot.partitions.forEach((partition) => nodes.push(partitionNode(snapshot, partitionView(snapshot, partition.id), positions[`partition-${partition.id}`], "replication")));
   cluster.brokers.forEach((broker) => nodes.push(node(`broker-${broker.id}`, positions[`broker-${broker.id}`], {
@@ -435,7 +508,7 @@ function activityProjection(snapshot: KafkaLabSnapshot): ChartProjection {
   categories.forEach((category, index) => {
     const events = snapshot.events.filter((event) => category.types.some((type) => type === event.type));
     const latest = events.at(-1);
-    nodes.push(node(`activity-${category.id}`, { x: 390, y: 35 + index * 85 }, {
+    nodes.push(node(`activity-${category.id}`, { x: 390, y: 35 + index * 200 }, {
       kind: "activity", icon: "activity", eyebrow: "EVENT GROUP", title: category.label, metric: `${events.length} events`, status: latest?.summary ?? "no events yet", state: category.id === "failed" && events.length ? "attention" : "idle",
       tooltip: { title: category.label, eyebrow: "EVENT GROUP", summary: `Recent simulator events grouped as ${category.label.toLowerCase()}.`, rows: [{ label: "Events", value: String(events.length) }, { label: "Latest time", value: latest ? new Date(latest.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "none" }, { label: "Latest detail", value: latest?.summary ?? "none" }, { label: "Concept", value: latest?.concept ?? "none" }] },
     }));
@@ -448,17 +521,43 @@ export function getChartVariant(variant: ChartVariantId) {
   return CHART_VARIANTS.find((candidate) => candidate.id === variant) ?? CHART_VARIANTS[0];
 }
 
-export function projectChart(snapshot: KafkaLabSnapshot, variant: ChartVariantId): ChartProjection {
+function focusProjection(snapshot: KafkaLabSnapshot, projection: ChartProjection, focus: ChartFocus): ChartProjection {
+  if (!focus.focused || ["flow", "delivery", "activity"].includes(projection.variant)) return projection;
+  const partition = snapshot.partitions.find((candidate) => candidate.id === focus.focusPartitionId) ?? snapshot.partitions[0];
+  if (!partition) return projection;
+  const owner = groupFor(snapshot)?.assignments[partition.id];
+  const keep = new Set(["topic", "group", "offset-model", "replication-unavailable", `partition-${partition.id}`, `consumer-${owner}`]);
+  if (projection.variant === "offsets") ["committed", "current", "end"].forEach((metric) => keep.add(`offset-${metric}-${partition.id}`));
+  if (projection.variant === "replication") snapshot.cluster?.assignments.find((assignment) => assignment.topic === snapshot.topicName && assignment.partition === partition.id)?.replicas.forEach((id) => keep.add(`broker-${id}`));
+  let brokerIndex = 0;
+  const nodes = projection.nodes.filter((candidate) => keep.has(candidate.id)).map((candidate) => {
+    let position = candidate.position;
+    if (candidate.id === "topic" || candidate.id === "group" || candidate.id === "offset-model") position = { x: 0, y: 110 };
+    if (candidate.id === `partition-${partition.id}`) position = { x: 330, y: 110 };
+    if (candidate.id === `consumer-${owner}`) position = { x: 700, y: 110 };
+    if (candidate.id.startsWith("offset-committed")) position = { x: 680, y: 0 };
+    if (candidate.id.startsWith("offset-current")) position = { x: 680, y: 175 };
+    if (candidate.id.startsWith("offset-end")) position = { x: 680, y: 350 };
+    if (candidate.id.startsWith("broker-")) position = { x: 700, y: brokerIndex++ * 220 };
+    return { ...candidate, position };
+  });
+  const visible = new Set(nodes.map((candidate) => candidate.id));
+  return { ...projection, nodes, edges: projection.edges.filter((candidate) => visible.has(candidate.source) && visible.has(candidate.target)), focusNodeId: visible.has(`partition-${partition.id}`) ? `partition-${partition.id}` : projection.focusNodeId, ariaLabel: `${projection.ariaLabel}. Focused on P${partition.id}.` };
+}
+
+export function projectChart(snapshot: KafkaLabSnapshot, variant: ChartVariantId, focus: ChartFocus = {}): ChartProjection {
+  let projection: ChartProjection;
   switch (variant) {
-    case "partitions": return partitionsProjection(snapshot);
-    case "consumers": return consumersProjection(snapshot);
-    case "offsets": return offsetsProjection(snapshot);
-    case "delivery": return deliveryProjection(snapshot);
-    case "replication": return replicationProjection(snapshot);
-    case "activity": return activityProjection(snapshot);
+    case "partitions": projection = partitionsProjection(snapshot); break;
+    case "consumers": projection = consumersProjection(snapshot); break;
+    case "offsets": projection = offsetsProjection(snapshot); break;
+    case "delivery": projection = deliveryProjection(snapshot); break;
+    case "replication": projection = replicationProjection(snapshot); break;
+    case "activity": projection = activityProjection(snapshot); break;
     case "flow":
-    default: return flowProjection(snapshot);
+    default: projection = flowProjection(snapshot, focus);
   }
+  return focusProjection(snapshot, projection, focus);
 }
 
 export function chartLayout(flowLayout: { positions: Record<string, XYPosition>; viewport: { x: number; y: number; zoom: number } | null; views?: Partial<Record<ChartVariantId, { positions: Record<string, XYPosition>; viewport: { x: number; y: number; zoom: number } | null }>> } | undefined, variant: ChartVariantId) {

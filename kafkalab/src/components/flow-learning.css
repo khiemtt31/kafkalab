@@ -1,0 +1,45 @@
+.kl-workspace.kl-learning-workspace { height: auto; min-height: calc(100dvh - 72px); overflow: visible; }
+.kl-learning-workspace .kl-workspace-bar { justify-content: space-between; padding: 20px 28px; }
+.kl-flow-question { min-width: 0; }
+.kl-flow-question h1 { margin: 0; color: var(--kl-ink); font-size: clamp(21px, 2.3vw, 30px); font-weight: 650; letter-spacing: -.7px; }
+.kl-flow-question p { margin: 6px 0 0; color: var(--kl-muted); font-size: 13px; line-height: 1.5; }
+.kl-flow-learning-layout { display: grid; grid-template-columns: minmax(0, 1fr) 370px; flex: 1; min-height: 0; }
+.kl-learning-workspace--standalone .kl-flow-learning-layout { grid-template-columns: minmax(0, 1fr); }
+.kl-flow-visual { display: flex; flex-direction: column; min-width: 0; }
+.kl-flow-scope { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 24px; min-height: 58px; color: var(--kl-muted); font-size: 12px; }
+.kl-flow-scope label { display: flex; align-items: center; gap: 10px; }
+.kl-flow-scope select { padding: 5px 24px 5px 9px; border: 1px solid var(--kl-line); border-radius: 6px; color: var(--kl-ink); background: var(--kl-surface); }
+.kl-flow-scope button { padding: 7px 10px; border: 1px solid var(--kl-line); border-radius: 6px; background: var(--kl-surface); color: var(--kl-ink); font-size: 12px; }
+.kl-flow-scope button[aria-pressed="true"] { border-color: var(--kl-accent-ink); color: var(--kl-accent-ink); }
+.kl-learning-workspace .kl-canvas-stage { padding: 0 20px; min-height: 520px; height: max(520px, calc(100dvh - 320px)); flex: 1; background: var(--kl-bg); }
+.kl-flow-diagnosis { display: flex; align-items: flex-start; gap: 11px; padding: 16px 20px; margin: 14px 20px; border: 1px solid var(--kl-line); border-radius: 10px; background: var(--kl-surface); }
+.kl-flow-diagnosis > svg { margin-top: 2px; flex: none; color: var(--kl-accent-ink); }
+.kl-flow-diagnosis strong { display: block; color: var(--kl-ink); font-size: 13px; line-height: 1.5; font-weight: 650; overflow-wrap: anywhere; }
+.kl-flow-diagnosis p { margin: 5px 0 0; color: var(--kl-muted); font-size: 12px; line-height: 1.6; }
+.kl-flow-diagnosis.is-failure { border-left: 3px solid var(--kl-red); }
+.kl-flow-challenge { min-width: 0; padding: 23px 20px; background: var(--kl-surface); border-left: 1px solid var(--kl-line); }
+.kl-flow-challenge .kl-guide-experiments { margin: 0; }
+.kl-flow-challenge .kl-guide-learning-heading h2 { font-size: 23px; }
+.kl-learning-workspace .kl-chart-tabs { padding-left: 20px; min-height: 50px; }
+@media (min-width: 1650px) { .kl-flow-learning-layout { grid-template-columns: minmax(0, 1fr) 410px; } }
+@media (max-width: 1100px) {
+  .kl-flow-learning-layout { grid-template-columns: minmax(0, 1fr) 330px; }
+  .kl-flow-challenge { padding: 20px 15px; }
+  .kl-learning-workspace .kl-workspace-bar { align-items: flex-start; gap: 12px; padding: 17px 20px; }
+}
+@media (max-width: 1200px) {
+  .kl-flow-learning-layout { grid-template-columns: 1fr; }
+  .kl-flow-challenge { border-left: 0; border-top: 1px solid var(--kl-line); padding: 24px 20px; }
+  .kl-learning-workspace .kl-canvas-stage { height: 480px; min-height: 480px; flex: none; }
+}
+@media (max-width: 600px) {
+  .kl-workspace.kl-learning-workspace { min-height: calc(100dvh - 104px); }
+  .kl-learning-workspace .kl-workspace-bar { flex-direction: column; align-items: stretch; padding: 18px 16px 12px; }
+  .kl-learning-workspace .kl-toolbar { margin-left: 0; align-self: flex-end; }
+  .kl-flow-question h1 { font-size: 24px; }
+  .kl-flow-question p { font-size: 12px; }
+  .kl-flow-scope { padding: 12px 14px; }
+  .kl-learning-workspace .kl-canvas-stage { padding: 0 10px; height: 440px; min-height: 440px; }
+  .kl-flow-diagnosis { margin: 12px 10px; padding: 12px; }
+  .kl-learning-workspace .kl-chart-tabs { padding-left: 10px; }
+}

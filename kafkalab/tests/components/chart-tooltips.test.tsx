@@ -54,146 +54,112 @@ describe("chart node tooltips", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows a labelled tooltip on pointer hover and keyboard focus", () => {
-    const node = projectChart(useKafkaStore.getState().snapshot, "flow").nodes.find((candidate) => candidate.id === "topic");
-    expect(node).toBeDefined();
-    render(<ChartNodeFrame id={node!.id} data={node!.data} selected={false} />);
-    const chartNode = screen.getByRole("generic", { name: /topic orders/i });
-    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-
+  it("keeps the teaching sentence visible and opens extra details only on request", () => {
+    const { chartNode } = renderTopic();
+    const details = screen.getByRole("button", { name: "Details for orders" });
+    expect(chartNode.querySelector(".kl-flow-node__lesson")).toHaveTextContent("same key");
     fireEvent.mouseEnter(chartNode);
-    expect(screen.getByRole("tooltip")).toHaveTextContent("Stored records");
-    expect(chartNode).toHaveAttribute("aria-describedby", "chart-tooltip-topic");
-
-    fireEvent.mouseLeave(chartNode);
-    act(() => vi.advanceTimersByTime(200));
+    act(() => chartNode.focus());
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    fireEvent.focus(chartNode);
-    expect(screen.getByRole("tooltip")).toHaveAttribute("id", "chart-tooltip-topic");
+    expect(details).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(details);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Stored records");
+    expect(details).toHaveAttribute("aria-expanded", "true");
+    expect(details).toHaveAttribute("aria-controls", "chart-tooltip-topic");
+    fireEvent.mouseLeave(chartNode);
+    act(() => vi.advanceTimersByTime(500));
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    fireEvent.click(details);
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
-  it("portals outside transformed and clipped ancestors using the measured size", () => {
+  it("portals outside transformed and clipped ancestors and clamps the measured size", () => {
     anchorRect = rect(740, 530, 160, 80);
-    const { chartNode, container } = renderTopic(true);
-    fireEvent.mouseEnter(chartNode);
+    const { container } = renderTopic(true);
+    fireEvent.click(screen.getByRole("button", { name: "Details for orders" }));
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip.parentElement).toBe(document.body);
     expect(container).not.toContainElement(tooltip);
     expect(tooltip).toHaveStyle({ left: "468px", top: "508px" });
-  });
-
-  it("clamps a measured tooltip into a narrow viewport", () => {
     vi.stubGlobal("innerWidth", 320);
     vi.stubGlobal("innerHeight", 500);
     anchorRect = rect(20, 330, 250, 70);
     tooltipRect = rect(0, 0, 296, 260);
-    const { chartNode } = renderTopic();
-    fireEvent.mouseEnter(chartNode);
-    expect(screen.getByRole("tooltip")).toHaveStyle({ left: "12px", top: "58px" });
+    nextFrame();
+    expect(tooltip).toHaveStyle({ left: "12px", top: "58px" });
   });
 
-  it("follows drag, pan, zoom and changing tooltip size without scroll events", () => {
-    const { chartNode, unmount } = renderTopic();
-    fireEvent.mouseEnter(chartNode);
+  it("follows graph movement while requested details are open and stops tracking on close", () => {
+    const { unmount } = renderTopic();
+    fireEvent.click(screen.getByRole("button", { name: "Details for orders" }));
     expect(screen.getByRole("tooltip")).toHaveStyle({ left: "312px", top: "150px" });
     anchorRect = rect(800, 550, 100, 40);
     tooltipRect = rect(0, 0, 240, 220);
     nextFrame();
     expect(screen.getByRole("tooltip")).toHaveStyle({ left: "548px", top: "468px" });
-    vi.stubGlobal("innerHeight", 400);
-    nextFrame();
-    expect(screen.getByRole("tooltip")).toHaveStyle({ top: "168px" });
     unmount();
     expect(animationFrames.size).toBe(0);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
-  it("keeps details open while crossing the gap and scrolling on the tooltip", () => {
-    const { chartNode } = renderTopic();
-    fireEvent.mouseEnter(chartNode);
-    fireEvent.mouseLeave(chartNode);
-    act(() => vi.advanceTimersByTime(100));
-    const tooltip = screen.getByRole("tooltip");
-    fireEvent.mouseEnter(tooltip);
-    fireEvent.scroll(tooltip, { target: { scrollTop: 80 } });
-    act(() => vi.advanceTimersByTime(250));
-    expect(screen.getByRole("tooltip")).toBe(tooltip);
-    expect(tooltip.scrollTop).toBe(80);
-    fireEvent.mouseLeave(tooltip);
-    act(() => vi.advanceTimersByTime(200));
-    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-  });
-
-  it("preserves focus visibility when the pointer leaves, and hover when focus leaves", () => {
-    const { chartNode } = renderTopic();
-    act(() => chartNode.focus());
-    fireEvent.mouseEnter(chartNode);
-    fireEvent.mouseLeave(chartNode);
-    act(() => vi.advanceTimersByTime(250));
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-    fireEvent.mouseEnter(chartNode);
-    act(() => chartNode.blur());
-    act(() => vi.advanceTimersByTime(250));
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-    fireEvent.mouseLeave(chartNode);
-    act(() => vi.advanceTimersByTime(200));
-    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-  });
-
-  it("uses wrapper focus without a duplicate tab stop and preserves graph instructions", () => {
+  it("supports deliberate keyboard details and returns focus on Escape", () => {
     const { chartNode, wrapper } = renderTopic(true);
     expect(chartNode).toHaveAttribute("tabindex", "-1");
     act(() => wrapper.focus());
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-    expect(wrapper).toHaveAttribute("aria-describedby", "graph-keyboard-help chart-tooltip-topic");
-    fireEvent.keyDown(wrapper, { key: "Escape" });
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    expect(wrapper).toHaveFocus();
-    expect(wrapper).toHaveAttribute("aria-describedby", "graph-keyboard-help");
-    nextFrame();
-    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    act(() => wrapper.blur());
-    act(() => wrapper.focus());
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-  });
-
-  it("permits keyboard scrolling and restores wrapper focus on Escape", () => {
-    const { wrapper } = renderTopic(true);
-    act(() => wrapper.focus());
     fireEvent.keyDown(wrapper, { key: "F2" });
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveFocus();
-    act(() => vi.advanceTimersByTime(250));
-    expect(screen.getByRole("tooltip")).toBe(tooltip);
+    expect(wrapper).toHaveAttribute("aria-describedby", "graph-keyboard-help chart-tooltip-topic");
+    fireEvent.scroll(tooltip, { target: { scrollTop: 80 } });
+    expect(tooltip.scrollTop).toBe(80);
     fireEvent.keyDown(tooltip, { key: "Escape" });
-    expect(wrapper).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Details for orders" })).toHaveFocus();
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(wrapper).toHaveAttribute("aria-describedby", "graph-keyboard-help");
   });
 
-  it("dismisses pointer-only details on Escape and reopens on a new hover", () => {
-    const { chartNode } = renderTopic();
-    fireEvent.mouseEnter(chartNode);
-    fireEvent.keyDown(window, { key: "Escape" });
+  it("dismisses requested details on an outside pointer action", () => {
+    renderTopic();
+    fireEvent.click(screen.getByRole("button", { name: "Details for orders" }));
+    fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     expect(animationFrames.size).toBe(0);
-    fireEvent.mouseLeave(chartNode);
-    fireEvent.mouseEnter(chartNode);
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
   });
 
-  it("uses context-specific detail rows for partition nodes", () => {
-    const node = projectChart(useKafkaStore.getState().snapshot, "partitions").nodes.find((candidate) => candidate.id === "partition-0");
-    expect(node?.data.tooltip.rows.map((row) => row.label)).toEqual(expect.arrayContaining(["Owner", "Records", "C / P / LEO", "Commit lag"]));
+  it("closes the previous node's details and geometry tracking when keyboard focus leaves its wrapper and portal", () => {
+    const nodes = projectChart(useKafkaStore.getState().snapshot, "flow").nodes;
+    const first = nodes.find((node) => node.id === "topic")!;
+    const second = nodes.find((node) => node.id === "partition-0")!;
+    render(<>{[first, second].map((node) => <div key={node.id} className="react-flow__node" tabIndex={0}><ChartNodeFrame id={node.id} data={node.data} selected={false} /></div>)}</>);
+    const firstButton = screen.getByRole("button", { name: "Details for orders" });
+    const secondButton = screen.getByRole("button", { name: "Details for P0" });
+    act(() => firstButton.focus());
+    fireEvent.click(firstButton);
+    fireEvent.keyDown(firstButton, { key: "F2" });
+    expect(screen.getByRole("tooltip")).toHaveFocus();
+    act(() => firstButton.focus());
+    expect(screen.getByRole("tooltip")).toHaveAttribute("id", "chart-tooltip-topic");
+    expect(animationFrames.size).toBe(1);
+
+    act(() => secondButton.focus());
+    expect(firstButton).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(animationFrames.size).toBe(0);
+    fireEvent.click(secondButton);
+    expect(screen.getAllByRole("tooltip")).toHaveLength(1);
+    expect(screen.getByRole("tooltip")).toHaveAttribute("id", "chart-tooltip-partition-0");
+    expect(animationFrames.size).toBe(1);
+    act(() => secondButton.blur());
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expect(animationFrames.size).toBe(0);
   });
-  it("opens details if wrapper focus arrived before the native listeners attached", () => {
+
+  it("does not open on initial wrapper focus or replay after a hidden page returns", () => {
     const { wrapper } = renderTopic(true, true);
     expect(wrapper).toHaveFocus();
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-  });
-  it("dismisses details and cancels geometry tracking while hidden without replay on return", () => {
-    const { wrapper } = renderTopic(true);
-    act(() => wrapper.focus());
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Details for orders" }));
     const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
     fireEvent(document, new Event("visibilitychange"));
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
@@ -201,7 +167,10 @@ describe("chart node tooltips", () => {
     visibility.mockReturnValue("visible");
     fireEvent(document, new Event("visibilitychange"));
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    act(() => wrapper.blur()); act(() => wrapper.focus());
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("keeps partition ownership and position details available", () => {
+    const node = projectChart(useKafkaStore.getState().snapshot, "partitions").nodes.find((candidate) => candidate.id === "partition-0");
+    expect(node?.data.tooltip.rows.map((row) => row.label)).toEqual(expect.arrayContaining(["Owner", "Records", "C / P / LEO", "Commit lag"]));
   });
 });
